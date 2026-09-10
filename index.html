@@ -1,0 +1,1901 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>打包模拟</title>
+    <style>
+        :root {
+            --bg-base: #f1f5f9;
+            --panel-bg: #ffffff;
+            --panel-border: #e2e8f0;
+            --cyan: #0284c7;
+            --cyan-hover: #0369a1;
+            --cyan-glow: rgba(2, 132, 199, 0.12);
+            --text-main: #1e293b;
+            --text-muted: #64748b;
+            --card-bg: #ffffff;
+            --card-border: #e2e8f0;
+            --input-bg: #ffffff;
+            --shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.05);
+            --btn-radius: 6px;
+            --btn-height: 28px;
+        }
+
+        body.dark-mode {
+            --bg-base: #090d16;
+            --panel-bg: #0f172a;
+            --panel-border: #1e293b;
+            --cyan: #38bdf8;
+            --cyan-hover: #0ea5e9;
+            --cyan-glow: rgba(56, 189, 248, 0.15);
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --card-bg: #1e293b;
+            --card-border: #334155;
+            --input-bg: #0f172a;
+            --shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.4);
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "PingFang SC", sans-serif; -webkit-font-smoothing: antialiased; }
+        body { display: flex; height: 100vh; width: 100vw; background: var(--bg-base); color: var(--text-main); overflow: hidden; position: relative; }
+
+        input[type=number]::-webkit-inner-spin-button, 
+        input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+        input[type=number] { -moz-appearance: textfield; }
+
+        #hud-sidebar {
+            width: 430px; height: 100%; background: var(--panel-bg);
+            border-right: 1px solid var(--panel-border); box-shadow: var(--shadow);
+            display: flex; flex-direction: column; z-index: 30; overflow-y: auto; overflow-x: hidden;
+            flex-shrink: 0; scrollbar-width: thin; scrollbar-color: var(--cyan) transparent;
+            padding-bottom: 20px;
+        }
+        #hud-sidebar::-webkit-scrollbar { width: 5px; }
+        #hud-sidebar::-webkit-scrollbar-thumb { background: var(--cyan); border-radius: 4px; }
+
+        .hud-header { padding: 10px 14px; border-bottom: 1px solid var(--panel-border); display: flex; justify-content: space-between; align-items: center; background: var(--panel-bg); }
+        .hud-title h1 { font-size: 0.95rem; font-weight: 700; color: var(--cyan); letter-spacing: 0.5px; }
+        .header-actions { display: flex; align-items: center; gap: 6px; }
+        
+        .icon-btn {
+            background: var(--input-bg); border: 1px solid var(--card-border); color: var(--text-main);
+            width: var(--btn-height); height: var(--btn-height) !important; border-radius: var(--btn-radius); display: flex; align-items: center; justify-content: center;
+            cursor: pointer; font-size: 0.85rem; transition: all 0.15s; box-sizing: border-box;
+        }
+        .icon-btn:hover { border-color: var(--cyan); color: var(--cyan); }
+        
+        .unit-toggle { display: flex; background: var(--card-border); border-radius: var(--btn-radius); padding: 2px; height: var(--btn-height) !important; box-sizing: border-box; }
+        .unit-btn { background: transparent; border: none; color: var(--text-muted); font-size: 0.72rem; font-weight: 700; padding: 0 8px; border-radius: 4px; cursor: pointer; height: 100%; transition: 0.15s; }
+        .unit-btn.active { background: var(--panel-bg); color: var(--cyan); box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+
+        .hud-content { padding: 8px 10px; display: flex; flex-direction: column; gap: 8px; width: 100%; }
+        
+        .sci-card {
+            background: var(--card-bg); border: 1px solid var(--card-border); border-radius: 8px;
+            padding: 8px 10px; display: flex; flex-direction: column; gap: 6px;
+        }
+        .card-head { display: flex; justify-content: space-between; align-items: center; }
+        .card-label { font-size: 0.82rem; font-weight: 700; color: var(--text-main); }
+
+        .input-group-field { display: flex; flex-direction: column; gap: 2px; }
+        .field-label { font-size: 0.7rem; color: var(--text-muted); font-weight: 600; }
+
+        .grid-3col { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 5px; width: 100%; }
+        
+        /* 强制全站统一高度 28px */
+        .input-with-label {
+            display: flex; align-items: center; width: 100%;
+            background: var(--input-bg); border: 1px solid var(--card-border);
+            border-radius: var(--btn-radius); height: var(--btn-height) !important; min-height: var(--btn-height) !important; max-height: var(--btn-height) !important;
+            overflow: hidden; transition: border-color 0.15s, box-shadow 0.15s; box-sizing: border-box;
+        }
+        .input-with-label:focus-within { border-color: var(--cyan); box-shadow: 0 0 0 2px var(--cyan-glow); }
+        .input-with-label input.sci-input {
+            flex: 1; border: none; background: transparent; height: 100% !important; min-width: 0;
+            padding: 0 2px; color: var(--text-main); font-size: 0.8rem; font-weight: 700; outline: none; box-shadow: none; border-radius: 0;
+            text-align: center; box-sizing: border-box;
+        }
+        .input-with-label .suffix-text {
+            background: var(--bg-base); border-left: 1px solid var(--card-border);
+            padding: 0 6px; font-size: 0.68rem; color: var(--text-muted); font-weight: 600;
+            display: flex; align-items: center; justify-content: center; height: 100% !important; white-space: nowrap; pointer-events: none; flex-shrink: 0; box-sizing: border-box;
+        }
+
+        .sci-input, select.sci-select {
+            height: var(--btn-height) !important; min-height: var(--btn-height) !important; max-height: var(--btn-height) !important;
+            background: var(--input-bg); border: 1px solid var(--card-border); color: var(--text-main); padding: 0 6px;
+            border-radius: var(--btn-radius); font-size: 0.78rem; font-weight: 600; outline: none; transition: 0.15s; width: 100%; min-width: 0; box-sizing: border-box;
+        }
+        .sci-input:focus, select.sci-select:focus { border-color: var(--cyan); box-shadow: 0 0 0 2px var(--cyan-glow); }
+        select.sci-select { cursor: pointer; }
+
+        /* 下拉框选中预设的特殊高亮显示状态 */
+        select.sci-select.preset-selected-active {
+            border-color: var(--cyan) !important;
+            background-color: rgba(2, 132, 199, 0.08) !important;
+            color: var(--cyan) !important;
+            font-weight: 700 !important;
+            box-shadow: 0 0 0 2px var(--cyan-glow) !important;
+        }
+        body.dark-mode select.sci-select.preset-selected-active {
+            background-color: rgba(56, 189, 248, 0.12) !important;
+            color: var(--cyan) !important;
+        }
+
+        .tool-row { display: flex; align-items: center; justify-content: space-between; gap: 6px; }
+        .tool-title { font-size: 0.7rem; color: var(--text-muted); font-weight: 600; flex-shrink: 0; }
+        
+        /* 保证分段控件外部高度严格等于 28px 与其它按钮绝对齐平 */
+        .segmented-control {
+            display: flex; background: var(--input-bg); border: 1px solid var(--card-border); border-radius: var(--btn-radius);
+            padding: 2px; gap: 2px; flex: 1; height: var(--btn-height) !important; min-height: var(--btn-height) !important; max-height: var(--btn-height) !important;
+            align-items: center; box-sizing: border-box;
+        }
+        .seg-btn {
+            flex: 1; height: 100% !important; background: transparent; border: none; color: var(--text-muted);
+            font-size: 0.7rem; font-weight: 600; padding: 0 4px; border-radius: 4px; cursor: pointer; transition: all 0.15s;
+            white-space: nowrap; display: flex; align-items: center; justify-content: center; box-sizing: border-box;
+        }
+        .seg-btn.active { background: var(--cyan); color: #fff; font-weight: 700; }
+        .seg-btn.tape-active { background: #eab308; color: #fff; font-weight: 700; }
+
+        .btn-group { display: flex; gap: 4px; align-items: center; flex-shrink: 0; }
+        .sci-btn-mini {
+            height: var(--btn-height) !important; min-height: var(--btn-height) !important; max-height: var(--btn-height) !important;
+            background: var(--input-bg); border: 1px solid var(--card-border); color: var(--text-main);
+            font-size: 0.7rem; font-weight: 600; padding: 0 8px; border-radius: var(--btn-radius); cursor: pointer;
+            transition: all 0.15s; display: inline-flex; align-items: center; justify-content: center; white-space: nowrap; box-sizing: border-box;
+        }
+        .sci-btn-mini:hover { border-color: var(--cyan); color: var(--cyan); }
+        .sci-btn-mini.danger:hover { border-color: #ef4444; color: #ef4444; }
+        .sci-btn-primary { background: var(--cyan); color: #fff !important; border-color: var(--cyan); font-weight: 700; }
+        .sci-btn-primary:hover { background: var(--cyan-hover); border-color: var(--cyan-hover); }
+
+        .status-box {
+            border-radius: 8px; padding: 10px; display: flex; flex-direction: column; font-size: 0.75rem;
+            transition: all 0.2s ease; gap: 6px;
+        }
+        .status-fit { background: #f0f9ff; border: 1px solid #bae6fd; color: #0369a1; }
+        body.dark-mode .status-fit { background: #082f49; border-color: #0c4a6e; color: #7dd3fc; }
+        .status-over { background: #fef2f2; border: 1px solid #fecaca; color: #991b1b; }
+        body.dark-mode .status-over { background: #3b1114; border-color: #7f1d1d; color: #fca5a5; }
+
+        .multi-item-card {
+            background: var(--card-bg); border: 1px solid var(--card-border); border-radius: 6px;
+            padding: 6px; display: flex; flex-direction: column; gap: 4px;
+        }
+
+        #viewport-3d { flex: 1; position: relative; width: 100%; height: 100%; cursor: grab; }
+        #viewport-3d:active { cursor: grabbing; }
+        #canvas3d { width: 100%; height: 100%; display: block; touch-action: none; }
+
+        .floating-hud {
+            position: absolute; top: 12px; right: 12px; left: auto; display: flex; gap: 8px;
+            pointer-events: none; z-index: 20;
+        }
+        .f-group {
+            display: flex; gap: 4px; pointer-events: auto;
+            background: var(--panel-bg); border: 1px solid var(--panel-border); border-radius: 30px;
+            padding: 3px 6px; box-shadow: var(--shadow);
+        }
+        .f-btn {
+            background: transparent; border: none; color: var(--text-muted); font-size: 0.7rem;
+            font-weight: 600; padding: 3px 8px; border-radius: 20px; cursor: pointer; white-space: nowrap; transition: 0.15s;
+        }
+        .f-btn.active { background: var(--cyan); color: #ffffff; }
+
+        .ref-tray-container {
+            position: absolute; bottom: 12px; left: 12px; right: 12px; max-width: 440px;
+            background: var(--panel-bg); border: 1px solid var(--panel-border); border-radius: 8px;
+            padding: 10px 12px; display: none; flex-direction: column; gap: 8px; font-size: 0.75rem;
+            box-shadow: var(--shadow); z-index: 20;
+        }
+        .ref-tray-container.show { display: flex; }
+        .ref-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap; }
+        .ref-item { display: flex; align-items: center; gap: 4px; cursor: pointer; color: var(--text-main); font-weight: 600; }
+
+        /* 所有弹窗固定内置于视口中央 */
+        .modal-mask {
+            position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+            background: rgba(0,0,0,0.5); z-index: 1000; display: none; align-items: center;
+            justify-content: center; padding: 12px; backdrop-filter: blur(2px);
+        }
+        .modal-card {
+            background: var(--panel-bg); border: 1px solid var(--panel-border); border-radius: 12px;
+            padding: 14px; width: 100%; max-width: 580px; max-height: 90vh; overflow-y: auto;
+            box-shadow: var(--shadow); display: flex; flex-direction: column; gap: 10px;
+        }
+        .modal-head { display: flex; justify-content: space-between; align-items: center; font-weight: 700; font-size: 0.95rem; color: var(--cyan); border-bottom: 1px solid var(--panel-border); padding-bottom: 8px; }
+
+        /* 文件夹外部框：白底纯净卡片 */
+        .mgr-folder-block {
+            background: #ffffff;
+            border: 1px solid var(--card-border);
+            border-radius: 8px;
+            padding: 8px 10px;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+        body.dark-mode .mgr-folder-block { background: var(--card-bg); }
+
+        .mgr-folder-title {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.78rem;
+            font-weight: 700;
+            color: var(--cyan);
+            cursor: pointer;
+            user-select: none;
+            padding: 2px 0;
+        }
+        .mgr-folder-title:hover { opacity: 0.85; }
+        
+        .mgr-folder-content {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            border-top: 1px dashed var(--card-border);
+            padding-top: 6px;
+        }
+        .mgr-folder-content.collapsed { display: none; }
+
+        /* 统一规格卡片：全白底，高度严格统一28px，分类在上方，按键左删右存 */
+        .mgr-item-card {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            padding: 8px;
+            background: #ffffff !important;
+            border: 1px solid var(--card-border);
+            border-radius: 6px;
+        }
+        body.dark-mode .mgr-item-card { background: var(--card-bg) !important; }
+
+        .mgr-item-card:hover { border-color: var(--cyan); }
+
+        .mgr-field-row {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            width: 100%;
+            height: var(--btn-height) !important;
+        }
+        .mgr-name-input {
+            flex: 1;
+            min-width: 0;
+            height: var(--btn-height) !important;
+            font-weight: 700;
+            color: var(--cyan);
+            text-align: left !important;
+            padding: 0 8px !important;
+        }
+
+        /* 顶部添加规格录入块：全白底，结构与下方卡片完全一致 */
+        .mgr-add-block {
+            background: #ffffff !important;
+            border: 1px solid var(--card-border);
+            border-radius: 8px;
+            padding: 8px 10px;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+        body.dark-mode .mgr-add-block { background: var(--card-bg) !important; }
+
+        .mgr-add-header {
+            font-weight: 700;
+            font-size: 0.75rem;
+            color: var(--cyan);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            height: 24px;
+        }
+
+        @media (max-width: 860px) {
+            body { flex-direction: column; }
+            #hud-sidebar { width: 100%; height: 55vh; order: 2; border-right: none; border-top: 1px solid var(--panel-border); }
+            #viewport-3d { width: 100%; height: 45vh; order: 1; }
+            .floating-hud { top: 8px; right: 8px; gap: 4px; }
+            .ref-tray-container { bottom: 8px; left: 8px; right: 8px; max-width: none; }
+        }
+    </style>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+</head>
+<body>
+
+    <div id="hud-sidebar">
+        <div class="hud-header">
+            <div class="hud-title"><h1>📦 打包模拟室</h1></div>
+            <div class="header-actions">
+                <button class="icon-btn" title="日/夜模式" onclick="toggleTheme()">☀️</button>
+                <button class="icon-btn" title="系统设置与调色盘" onclick="openModal('settings-modal')">🎨</button>
+                <button class="icon-btn" title="资源库管理" onclick="openManagerModal()">📂</button>
+                <div class="unit-toggle" id="unit-group">
+                    <button class="unit-btn active" id="btn-cm" onclick="setSysUnit('cm')">cm</button>
+                    <button class="unit-btn" id="btn-mm" onclick="setSysUnit('mm')">mm</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="hud-content">
+            <!-- 模块 1：待装载物品 -->
+            <div class="sci-card">
+                <div class="card-head">
+                    <span class="card-label">待装载物品</span>
+                    <div class="btn-group">
+                        <button class="sci-btn-mini" onclick="openSaveItemModal()">➕ 添加</button>
+                    </div>
+                </div>
+
+                <div class="segmented-control" id="mode-group">
+                    <button class="seg-btn active" id="mode-single" onclick="setItemMode('single')">单类物品</button>
+                    <button class="seg-btn" id="mode-multi" onclick="setItemMode('multi')">多类物品</button>
+                </div>
+
+                <div id="single-item-container" style="display:flex; flex-direction:column; gap:6px;">
+                    <div class="input-group-field">
+                        <span class="field-label">预设选择</span>
+                        <select class="sci-select" id="item-preset-select" onchange="onItemPresetSelect(this.value)">
+                            <option value="custom_item">✏️ 自定义尺寸...</option>
+                        </select>
+                    </div>
+
+                    <div class="grid-3col">
+                        <div class="input-with-label"><input type="number" class="sci-input" id="in-item-l" step="any" oninput="onItemParamChange()"><span class="suffix-text">长 <b class="u-lab">cm</b></span></div>
+                        <div class="input-with-label"><input type="number" class="sci-input" id="in-item-w" step="any" oninput="onItemParamChange()"><span class="suffix-text">宽 <b class="u-lab">cm</b></span></div>
+                        <div class="input-with-label"><input type="number" class="sci-input" id="in-item-h" step="any" oninput="onItemParamChange()"><span class="suffix-text">高 <b class="u-lab">cm</b></span></div>
+                    </div>
+
+                    <div class="tool-row">
+                        <span class="tool-title">摆放姿态:</span>
+                        <div class="segmented-control" id="posture-group">
+                            <button class="seg-btn active" id="pos-flat" onclick="setPosture('flat')">平放</button>
+                            <button class="seg-btn" id="pos-stand" onclick="setPosture('stand')">立放</button>
+                            <button class="seg-btn" id="pos-side" onclick="setPosture('side')">侧放</button>
+                        </div>
+                        <button class="sci-btn-mini" onclick="autoOrientItem()">自适应</button>
+                    </div>
+
+                    <div class="tool-row">
+                        <span class="tool-title">同款排列:</span>
+                        <div class="grid-3col" style="max-width: 250px;">
+                            <div class="input-with-label"><input type="number" class="sci-input" id="matrix-x" min="1" value="1" oninput="onMatrixChange()"><span class="suffix-text">长</span></div>
+                            <div class="input-with-label"><input type="number" class="sci-input" id="matrix-z" min="1" value="1" oninput="onMatrixChange()"><span class="suffix-text">宽</span></div>
+                            <div class="input-with-label"><input type="number" class="sci-input" id="matrix-y" min="1" value="1" oninput="onMatrixChange()"><span class="suffix-text">高</span></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="multi-item-container" style="display:none; flex-direction:column; gap:6px;">
+                    <div class="tool-row">
+                        <button class="sci-btn-mini sci-btn-primary" style="flex:1;" onclick="solveOptimalMultiPacking(true)">⚡ 自动计算三维最优解</button>
+                        <button class="sci-btn-mini" onclick="addMultiItemRow()">➕ 加物品</button>
+                    </div>
+                    <div id="multi-items-list" style="display:flex; flex-direction:column; gap:5px; max-height: 220px; overflow-y:auto; padding-right:2px;"></div>
+                </div>
+            </div>
+
+            <!-- 模块 2：纸箱 -->
+            <div class="sci-card">
+                <div class="card-head">
+                    <span class="card-label">纸箱</span>
+                    <div class="btn-group">
+                        <button class="sci-btn-mini" onclick="openSaveBoxModal()">➕ 添加</button>
+                    </div>
+                </div>
+
+                <div class="input-group-field">
+                    <span class="field-label">预设选择</span>
+                    <select class="sci-select" id="box-preset-select" onchange="onBoxSelect(this.value)">
+                        <option value="custom">✏️ 自定义尺寸...</option>
+                    </select>
+                </div>
+
+                <div class="grid-3col">
+                    <div class="input-with-label"><input type="number" class="sci-input" id="in-box-l" step="any" oninput="onBoxParamChange()"><span class="suffix-text">长 <b class="u-lab">cm</b></span></div>
+                    <div class="input-with-label"><input type="number" class="sci-input" id="in-box-w" step="any" oninput="onBoxParamChange()"><span class="suffix-text">宽 <b class="u-lab">cm</b></span></div>
+                    <div class="input-with-label"><input type="number" class="sci-input" id="in-box-h" step="any" oninput="onBoxParamChange()"><span class="suffix-text">高 <b class="u-lab">cm</b></span></div>
+                </div>
+
+                <div class="tool-row">
+                    <span class="tool-title">纸箱形态:</span>
+                    <div class="segmented-control" id="flap-group">
+                        <button class="seg-btn active" id="flap-open" onclick="setFlapState('open')">敞开</button>
+                        <button class="seg-btn" id="flap-half" onclick="setFlapState('half')">半</button>
+                        <button class="seg-btn" id="flap-closed" onclick="toggleFlapClosed()">闭合</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 模块 3：空间评估与推荐 -->
+            <div id="status-card" class="status-box status-fit">
+                <div style="display:flex; justify-content: space-between; align-items: flex-start;">
+                    <div style="display:flex; flex-direction:column; gap:2px;">
+                        <span style="font-weight:700; font-size:0.82rem;" id="match-box-title">🎯 当前纸箱：05号标准箱</span>
+                        <span style="font-size:0.7rem; opacity:0.85;" id="match-box-dims">(29×17×19 cm)</span>
+                    </div>
+                    <div style="display:flex; flex-direction:column; align-items:flex-end; gap:2px; text-align:right;">
+                        <span style="font-weight:800; font-size:0.82rem;" id="status-main-badge">✅ 完美装入</span>
+                        <span style="font-size:0.7rem; font-weight:600;" id="status-fill-rate">(利用率 100%)</span>
+                    </div>
+                </div>
+
+                <div id="status-sub" style="font-size:0.7rem; font-weight:600; padding:4px 6px; background:rgba(0,0,0,0.05); border-radius:4px;">
+                    余量: 长+6.5cm 宽+0.5cm 高+3.0cm
+                </div>
+                
+                <div class="tool-row" style="margin-top:2px;">
+                    <span class="tool-title" style="color:inherit; width:52px;">附加缓冲:</span>
+                    <div style="display:flex; gap:6px; flex:1;">
+                        <div class="input-with-label"><input type="number" id="in-custom-pad" class="sci-input" placeholder="0" oninput="onCustomPadInput(this.value)"><span class="suffix-text">膜 <b class="u-lab">cm</b></span></div>
+                        <div class="input-with-label"><input type="number" id="in-custom-gap" class="sci-input" placeholder="0" oninput="onCustomGapInput(this.value)"><span class="suffix-text">缝隙 <b class="u-lab">cm</b></span></div>
+                    </div>
+                </div>
+                <button class="sci-btn-mini sci-btn-primary" style="width:100%; height:32px; margin-top:2px;" onclick="autoFitBestBox()">⚡ 一键匹配最优纸箱</button>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- 3D 渲染主画布 -->
+    <div id="viewport-3d">
+        <canvas id="canvas3d"></canvas>
+
+        <div class="floating-hud">
+            <div class="f-group">
+                <button class="f-btn" id="btn-ref-toggle" onclick="toggleRefTray()">参考</button>
+                <button class="f-btn" id="btn-autorotate" onclick="toggleAutoRotate()">旋转</button>
+                <button class="f-btn" id="btn-reset-cam" onclick="resetCameraView()">回正</button>
+            </div>
+            <div class="f-group">
+                <button class="f-btn active" id="view-nest" onclick="setViewMode('nest')">透视装箱</button>
+                <button class="f-btn" id="view-side" onclick="setViewMode('side')">并排对比</button>
+            </div>
+        </div>
+
+        <div class="ref-tray-container" id="ref-tray-panel">
+            <div class="ref-row">
+                <div style="font-weight:700; color:var(--text-main);">参照物体</div>
+                <div style="display:flex; gap:10px;">
+                    <label class="ref-item"><input type="checkbox" id="ref-phone" checked onchange="updateRefVisibility()"> 📱 手机</label>
+                    <label class="ref-item"><input type="checkbox" id="ref-can" checked onchange="updateRefVisibility()"> 🥤 罐子</label>
+                    <label class="ref-item"><input type="checkbox" id="ref-a4" onchange="updateRefVisibility()"> 📄 A4纸</label>
+                </div>
+            </div>
+            <div class="ref-row">
+                <span style="font-weight:600; color:var(--text-muted);">手机长宽厚:</span>
+                <div style="display:flex; gap:4px; align-items:center;">
+                    <div class="input-with-label"><input type="number" id="in-phone-l" class="sci-input" value="14.7" oninput="onPhoneSizeChange()"><span class="suffix-text">长 <b class="u-lab">cm</b></span></div>×
+                    <div class="input-with-label"><input type="number" id="in-phone-w" class="sci-input" value="7.2" oninput="onPhoneSizeChange()"><span class="suffix-text">宽 <b class="u-lab">cm</b></span></div>×
+                    <div class="input-with-label"><input type="number" id="in-phone-h" class="sci-input" value="0.8" oninput="onPhoneSizeChange()"><span class="suffix-text">厚 <b class="u-lab">cm</b></span></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 侧边栏保存快捷弹窗 -->
+    <div id="save-item-modal" class="modal-mask" onclick="if(event.target===this)closeModal('save-item-modal')">
+        <div class="modal-card" style="max-width:380px;">
+            <div class="modal-head"><span>保存物品到库</span><span style="cursor:pointer;" onclick="closeModal('save-item-modal')">✕</span></div>
+            <div class="input-cell">
+                <span>分类夹</span>
+                <div class="input-with-label" style="height:28px;">
+                    <select class="sci-select" id="save-item-folder-select" onchange="onSaveFolderSelectChange('item', this.value)"></select>
+                    <span class="suffix-text">分类</span>
+                </div>
+            </div>
+            <div class="input-cell"><span>物品名称</span><input type="text" class="sci-input" id="custom-item-name" placeholder="将自动带上 】命名，如：单盒"></div>
+            <div class="btn-group" style="margin-top:6px;">
+                <button class="sci-btn-mini sci-btn-primary" style="flex:1;" onclick="confirmSaveCustomItem()">保存到物品库</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="save-box-modal" class="modal-mask" onclick="if(event.target===this)closeModal('save-box-modal')">
+        <div class="modal-card" style="max-width:380px;">
+            <div class="modal-head"><span>保存纸箱到库</span><span style="cursor:pointer;" onclick="closeModal('save-box-modal')">✕</span></div>
+            <div class="input-cell">
+                <span>分类夹</span>
+                <div class="input-with-label" style="height:28px;">
+                    <select class="sci-select" id="save-box-folder-select" onchange="onSaveFolderSelectChange('box', this.value)"></select>
+                    <span class="suffix-text">分类</span>
+                </div>
+            </div>
+            <div class="input-cell"><span>箱型名称</span><input type="text" class="sci-input" id="custom-box-name" placeholder="将自动带上 】命名，如：端盒箱"></div>
+            <div class="btn-group" style="margin-top:6px;">
+                <button class="sci-btn-mini sci-btn-primary" style="flex:1;" onclick="confirmSaveCustomBox()">保存到纸箱库</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 统一资源库管理：分类在上方，卡片高度严格一致28px，删除在左/保存在右，删除二次确认，分类原生下拉可选可新建 -->
+    <div id="manager-modal" class="modal-mask" onclick="if(event.target===this)closeModal('manager-modal')">
+        <div class="modal-card">
+            <div class="modal-head">
+                <span style="display:flex; align-items:center; gap:6px;">📂 资源库管理 (分类与规格配置)</span>
+                <span style="cursor:pointer;" onclick="closeModal('manager-modal')">✕</span>
+            </div>
+            
+            <div class="segmented-control" style="min-height:30px;">
+                <button class="seg-btn active" id="mgr-tab-item" onclick="switchMgrTab('item')">📦 物品库 (分类管理)</button>
+                <button class="seg-btn" id="mgr-tab-box" onclick="switchMgrTab('box')">📦 纸箱库 (分类管理)</button>
+            </div>
+            
+            <!-- 物品库管理面板 -->
+            <div id="mgr-content-item" style="display:flex; flex-direction:column; gap:8px;">
+                <!-- 顶部新增录入块：UI结构与下方卡片完全相同，分类在上方，全白底，强制28px高度 -->
+                <div class="mgr-add-block">
+                    <div class="mgr-add-header">
+                        <span>➕ 直接在库中新增物品规格</span>
+                        <button class="sci-btn-mini danger" style="height:22px;" onclick="resetDefaultItems()">恢复出厂默认物品</button>
+                    </div>
+                    <div class="mgr-field-row">
+                        <div class="input-with-label">
+                            <select class="sci-select" id="mgr-add-item-folder-select" onchange="onMgrNewFolderSelect('item', this.value)"></select>
+                            <span class="suffix-text">分类</span>
+                        </div>
+                    </div>
+                    <div class="mgr-field-row">
+                        <input type="text" id="mgr-add-item-name" class="sci-input mgr-name-input" placeholder="物品名称 (例如：手办单盒】)">
+                        <button class="sci-btn-mini sci-btn-primary" style="padding:0 14px;" onclick="mgrSubmitNewItem()">添加规格</button>
+                    </div>
+                    <div class="grid-3col">
+                        <div class="input-with-label"><input type="number" id="mgr-add-item-l" class="sci-input" placeholder="长"><span class="suffix-text">长 <b class="u-lab">cm</b></span></div>
+                        <div class="input-with-label"><input type="number" id="mgr-add-item-w" class="sci-input" placeholder="宽"><span class="suffix-text">宽 <b class="u-lab">cm</b></span></div>
+                        <div class="input-with-label"><input type="number" id="mgr-add-item-h" class="sci-input" placeholder="高"><span class="suffix-text">高 <b class="u-lab">cm</b></span></div>
+                    </div>
+                </div>
+
+                <div id="mgr-items-folder-container" style="display:flex; flex-direction:column; gap:8px; max-height:50vh; overflow-y:auto;"></div>
+            </div>
+
+            <!-- 纸箱库管理面板 -->
+            <div id="mgr-content-box" style="display:none; flex-direction:column; gap:8px;">
+                <!-- 顶部新增录入块：UI结构与下方卡片完全相同，分类在上方，全白底，强制28px高度 -->
+                <div class="mgr-add-block">
+                    <div class="mgr-add-header">
+                        <span>➕ 直接在库中新增纸箱规格</span>
+                        <button class="sci-btn-mini danger" style="height:22px;" onclick="resetDefaultBoxes()">恢复出厂默认纸箱</button>
+                    </div>
+                    <div class="mgr-field-row">
+                        <div class="input-with-label">
+                            <select class="sci-select" id="mgr-add-box-folder-select" onchange="onMgrNewFolderSelect('box', this.value)"></select>
+                            <span class="suffix-text">分类</span>
+                        </div>
+                    </div>
+                    <div class="mgr-field-row">
+                        <input type="text" id="mgr-add-box-name" class="sci-input mgr-name-input" placeholder="纸箱名称 (例如：定制箱】)">
+                        <button class="sci-btn-mini sci-btn-primary" style="padding:0 14px;" onclick="mgrSubmitNewBox()">添加规格</button>
+                    </div>
+                    <div class="grid-3col">
+                        <div class="input-with-label"><input type="number" id="mgr-add-box-l" class="sci-input" placeholder="长"><span class="suffix-text">长 <b class="u-lab">cm</b></span></div>
+                        <div class="input-with-label"><input type="number" id="mgr-add-box-w" class="sci-input" placeholder="宽"><span class="suffix-text">宽 <b class="u-lab">cm</b></span></div>
+                        <div class="input-with-label"><input type="number" id="mgr-add-box-h" class="sci-input" placeholder="高"><span class="suffix-text">高 <b class="u-lab">cm</b></span></div>
+                    </div>
+                </div>
+
+                <div id="mgr-boxes-folder-container" style="display:flex; flex-direction:column; gap:8px; max-height:50vh; overflow-y:auto;"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 系统调色盘弹窗 -->
+    <div id="settings-modal" class="modal-mask" onclick="if(event.target===this)closeModal('settings-modal')">
+        <div class="modal-card" style="max-width:380px;">
+            <div class="modal-head"><span>🎨 系统调色盘</span><span style="cursor:pointer;" onclick="closeModal('settings-modal')">✕</span></div>
+            <div style="display:flex; justify-content:space-between; align-items:center;"><span>背景底色:</span><input type="color" id="picker-bg" value="#f1f5f9" onchange="applyCustomColors()"></div>
+            <div style="display:flex; justify-content:space-between; align-items:center;"><span>纸箱纸色:</span><input type="color" id="picker-box" value="#c58f59" onchange="applyCustomColors()"></div>
+            <div style="display:flex; justify-content:space-between; align-items:center;"><span>物品颜色:</span><input type="color" id="picker-item" value="#ffffff" onchange="applyCustomColors()"></div>
+        </div>
+    </div>
+
+    <script>
+        const INITIAL_BOX_PRESETS = {
+            "p01": { name: "01号标准箱", folder: "邮政标准纸箱", dims: [530, 290, 370] },
+            "p02": { name: "02号标准箱", folder: "邮政标准纸箱", dims: [530, 230, 290] },
+            "p03": { name: "03号标准箱", folder: "邮政标准纸箱", dims: [430, 210, 270] },
+            "p04": { name: "04号标准箱", folder: "邮政标准纸箱", dims: [350, 190, 230] },
+            "p05": { name: "05号标准箱", folder: "邮政标准纸箱", dims: [290, 170, 190] },
+            "p06": { name: "06号标准箱", folder: "邮政标准纸箱", dims: [260, 150, 180] },
+            "p07": { name: "07号标准箱", folder: "邮政标准纸箱", dims: [230, 130, 160] },
+            "p08": { name: "08号标准箱", folder: "邮政标准纸箱", dims: [210, 110, 140] },
+            "p09": { name: "09号标准箱", folder: "邮政标准纸箱", dims: [195, 105, 135] },
+            "p10": { name: "10号标准箱", folder: "邮政标准纸箱", dims: [175, 95, 115] },
+            "p11": { name: "11号标准箱", folder: "邮政标准纸箱", dims: [145, 85, 105] },
+            "p12": { name: "12号标准箱", folder: "邮政标准纸箱", dims: [130, 80, 90] },
+            "h04": { name: "矮04号", folder: "半高矮箱", dims: [350, 190, 115] },
+            "h05": { name: "矮05号", folder: "半高矮箱", dims: [290, 170, 95] },
+            "h06": { name: "矮06号", folder: "半高矮箱", dims: [260, 150, 90] },
+            "h07": { name: "矮07号", folder: "半高矮箱", dims: [230, 130, 80] },
+            "h08": { name: "矮08号", folder: "半高矮箱", dims: [210, 110, 70] },
+            "h09": { name: "矮09号", folder: "半高矮箱", dims: [195, 105, 70] },
+            "h10": { name: "矮10号", folder: "半高矮箱", dims: [175, 95, 60] },
+            "h11": { name: "矮11号", folder: "半高矮箱", dims: [145, 85, 55] },
+            "h12": { name: "矮12号", folder: "半高矮箱", dims: [130, 80, 45] }
+        };
+
+        const INITIAL_ITEM_PRESETS = {
+            "pop_single": { name: "单盒", folder: "潮玩盲盒", dims: [265, 165, 65] },
+            "pop_case": { name: "大盒", folder: "潮玩盲盒", dims: [335, 270, 135] }
+        };
+
+        let BOX_PRESETS = JSON.parse(localStorage.getItem('cyber_pack_all_boxes') || JSON.stringify(INITIAL_BOX_PRESETS));
+        let ITEM_PRESETS = JSON.parse(localStorage.getItem('cyber_pack_all_items') || JSON.stringify(INITIAL_ITEM_PRESETS));
+
+        for (const k in ITEM_PRESETS) { if (!ITEM_PRESETS[k].folder) ITEM_PRESETS[k].folder = "默认物品"; }
+        for (const k in BOX_PRESETS) { if (!BOX_PRESETS[k].folder) BOX_PRESETS[k].folder = "默认分类"; }
+
+        let folderCollapseState = { item: {}, box: {} };
+
+        function saveBoxesToStorage() { localStorage.setItem('cyber_pack_all_boxes', JSON.stringify(BOX_PRESETS)); }
+        function saveItemsToStorage() { localStorage.setItem('cyber_pack_all_items', JSON.stringify(ITEM_PRESETS)); }
+
+        let curUnit = 'cm';
+        let isDarkMode = false;
+        let viewMode = 'nest';
+        let flapState = 'open';
+        let tapeEnabled = false;
+        let paddingThickness = 0;
+        let expectedGap = 0;
+        
+        let currentItemName = "单盒";
+        let currentBoxName = "05号标准箱";
+        let packingMode = 'single'; 
+        let itemSize = { l: 265, w: 165, h: 65 }; 
+        let matrixCount = { x: 1, y: 1, z: 1 };
+        let boxSize = { l: 290, w: 170, h: 190 }; 
+        let refPhoneSize = { l: 147, w: 72, h: 8 };
+
+        let multiItemList = [
+            { id: 1, name: "物品 A", l: 265, w: 165, h: 65, rot: 'flat', posX: 0, posY: 0, posZ: 0 },
+            { id: 2, name: "物品 B", l: 150, w: 100, h: 100, rot: 'flat', posX: 0, posY: 0, posZ: 0 }
+        ];
+
+        let scene, camera, renderer, controls;
+        let boxGroup, itemsGroup, refsGroup, padGroup;
+        let tapeMesh, gridHelper;
+
+        const ITEM_SURFACE_GAP = 3.0;
+
+        window.addEventListener('DOMContentLoaded', () => {
+            init3D();
+            setSysUnit('cm');
+            refreshPresetsDropdowns();
+            renderMultiItemsUI();
+            applyBoxPreset("p05");
+            syncUI();
+            animate();
+        });
+
+        function updateSegment(groupId, btnId) {
+            const grp = document.getElementById(groupId); if(!grp) return;
+            grp.querySelectorAll('.seg-btn').forEach(b => {
+                b.classList.remove('active');
+                b.classList.remove('tape-active');
+            });
+            if(btnId) { const btn = document.getElementById(btnId); if(btn) btn.classList.add('active'); }
+        }
+        function openModal(id) { 
+            document.getElementById(id).style.display = 'flex'; 
+            if (id === 'save-item-modal' || id === 'save-box-modal') refreshSaveModalFolderSelects();
+        }
+        function closeModal(id) { document.getElementById(id).style.display = 'none'; }
+        
+        function switchMgrTab(tab) {
+            document.getElementById('mgr-tab-item').classList.toggle('active', tab === 'item');
+            document.getElementById('mgr-tab-box').classList.toggle('active', tab === 'box');
+            document.getElementById('mgr-content-item').style.display = tab === 'item' ? 'flex' : 'none';
+            document.getElementById('mgr-content-box').style.display = tab === 'box' ? 'flex' : 'none';
+        }
+        function openManagerModal() {
+            openModal('manager-modal');
+            renderManagerItemsList();
+            renderManagerBoxesList();
+        }
+
+        function toggleRefTray() {
+            const panel = document.getElementById('ref-tray-panel');
+            const btn = document.getElementById('btn-ref-toggle');
+            panel.classList.toggle('show');
+            btn.classList.toggle('active', panel.classList.contains('show'));
+        }
+
+        function toggleFolderCollapse(type, folderName) {
+            folderCollapseState[type][folderName] = !folderCollapseState[type][folderName];
+            if (type === 'item') renderManagerItemsList();
+            else renderManagerBoxesList();
+        }
+
+        function getFolders(type) {
+            const dict = (type === 'item') ? ITEM_PRESETS : BOX_PRESETS;
+            const set = new Set();
+            for (const k in dict) {
+                set.add(dict[k].folder || (type === 'item' ? '默认物品' : '默认分类'));
+            }
+            return Array.from(set);
+        }
+
+        // ================= 下拉菜单选中状态的特殊高亮指示 =================
+        function updatePresetSelectHighlight() {
+            const itemSel = document.getElementById('item-preset-select');
+            if (itemSel) {
+                if (itemSel.value !== 'custom_item') {
+                    itemSel.classList.add('preset-selected-active');
+                } else {
+                    itemSel.classList.remove('preset-selected-active');
+                }
+            }
+            const boxSel = document.getElementById('box-preset-select');
+            if (boxSel) {
+                if (boxSel.value !== 'custom') {
+                    boxSel.classList.add('preset-selected-active');
+                } else {
+                    boxSel.classList.remove('preset-selected-active');
+                }
+            }
+        }
+
+        function refreshPresetsDropdowns() {
+            const boxSelect = document.getElementById('box-preset-select');
+            boxSelect.querySelectorAll('optgroup').forEach(g => g.remove());
+
+            const boxFolders = {};
+            for (const [k, v] of Object.entries(BOX_PRESETS)) {
+                const f = v.folder || '其它分类';
+                if (!boxFolders[f]) boxFolders[f] = [];
+                boxFolders[f].push({ key: k, ...v });
+            }
+
+            for (const [folderName, items] of Object.entries(boxFolders)) {
+                const optg = document.createElement('optgroup');
+                optg.label = `📁 ${folderName}`;
+                items.forEach(it => {
+                    const opt = document.createElement('option');
+                    opt.value = it.key;
+                    opt.textContent = `${it.name}: ${it.dims[0]} × ${it.dims[1]} × ${it.dims[2]} mm`;
+                    optg.appendChild(opt);
+                });
+                boxSelect.insertBefore(optg, boxSelect.lastElementChild);
+            }
+
+            const itemSelect = document.getElementById('item-preset-select');
+            itemSelect.querySelectorAll('optgroup').forEach(g => g.remove());
+
+            const itemFolders = {};
+            for (const [k, v] of Object.entries(ITEM_PRESETS)) {
+                const f = v.folder || '其它分类';
+                if (!itemFolders[f]) itemFolders[f] = [];
+                itemFolders[f].push({ key: k, ...v });
+            }
+
+            for (const [folderName, items] of Object.entries(itemFolders)) {
+                const optg = document.createElement('optgroup');
+                optg.label = `📁 ${folderName}`;
+                items.forEach(it => {
+                    const opt = document.createElement('option');
+                    opt.value = it.key;
+                    opt.textContent = `${it.name} (${it.dims[0]} × ${it.dims[1]} × ${it.dims[2]} mm)`;
+                    optg.appendChild(opt);
+                });
+                itemSelect.insertBefore(optg, itemSelect.lastElementChild);
+            }
+
+            refreshSaveModalFolderSelects();
+            updatePresetSelectHighlight();
+        }
+
+        function refreshSaveModalFolderSelects() {
+            const itemFolders = getFolders('item');
+            const boxFolders = getFolders('box');
+
+            const itemSel = document.getElementById('save-item-folder-select');
+            if (itemSel) {
+                itemSel.innerHTML = itemFolders.map(f => `<option value="${f}">${f}</option>`).join('') + `<option value="__NEW__">➕ 新建分类...</option>`;
+            }
+            const boxSel = document.getElementById('save-box-folder-select');
+            if (boxSel) {
+                boxSel.innerHTML = boxFolders.map(f => `<option value="${f}">${f}</option>`).join('') + `<option value="__NEW__">➕ 新建分类...</option>`;
+            }
+
+            const mgrItemSel = document.getElementById('mgr-add-item-folder-select');
+            if (mgrItemSel) {
+                mgrItemSel.innerHTML = itemFolders.map(f => `<option value="${f}">${f}</option>`).join('') + `<option value="__NEW__">➕ 新建分类...</option>`;
+            }
+            const mgrBoxSel = document.getElementById('mgr-add-box-folder-select');
+            if (mgrBoxSel) {
+                mgrBoxSel.innerHTML = boxFolders.map(f => `<option value="${f}">${f}</option>`).join('') + `<option value="__NEW__">➕ 新建分类...</option>`;
+            }
+        }
+
+        function onSaveFolderSelectChange(type, val) {
+            if (val === '__NEW__') {
+                const name = prompt('请输入新分类名称:');
+                const sel = document.getElementById(type === 'item' ? 'save-item-folder-select' : 'save-box-folder-select');
+                if (name && name.trim()) {
+                    const opt = document.createElement('option');
+                    opt.value = name.trim();
+                    opt.textContent = name.trim();
+                    sel.insertBefore(opt, sel.firstChild);
+                    sel.value = name.trim();
+                } else {
+                    sel.selectedIndex = 0;
+                }
+            }
+        }
+
+        function onMgrNewFolderSelect(type, val) {
+            if (val === '__NEW__') {
+                const name = prompt('请输入新分类名称:');
+                const sel = document.getElementById(type === 'item' ? 'mgr-add-item-folder-select' : 'mgr-add-box-folder-select');
+                if (name && name.trim()) {
+                    const opt = document.createElement('option');
+                    opt.value = name.trim();
+                    opt.textContent = name.trim();
+                    sel.insertBefore(opt, sel.firstChild);
+                    sel.value = name.trim();
+                } else {
+                    sel.selectedIndex = 0;
+                }
+            }
+        }
+
+        // ================= 资源库管理：分类置于上方、白底、高度严格一致28px、删除在左/保存在右/删除二次确认 =================
+        function renderManagerItemsList() {
+            const container = document.getElementById('mgr-items-folder-container');
+            container.innerHTML = '';
+
+            const allFolders = getFolders('item');
+            const folders = {};
+            for (const [k, it] of Object.entries(ITEM_PRESETS)) {
+                const f = it.folder || '默认分类';
+                if (!folders[f]) folders[f] = [];
+                folders[f].push({ key: k, ...it });
+            }
+
+            for (const [folderName, items] of Object.entries(folders)) {
+                const isCollapsed = !!folderCollapseState.item[folderName];
+                const folderCard = document.createElement('div');
+                folderCard.className = 'mgr-folder-block';
+
+                let rowsHTML = items.map(it => {
+                    const folderOptions = allFolders.map(f => `<option value="${f}" ${f===(it.folder||folderName)?'selected':''}>${f}</option>`).join('') + `<option value="__NEW__">➕ 新建分类...</option>`;
+
+                    return `
+                    <div class="mgr-item-card">
+                        <!-- 第一行：分类在上方，高度严格28px -->
+                        <div class="mgr-field-row">
+                            <div class="input-with-label">
+                                <select class="sci-select" id="mgr-edit-item-folder-${it.key}" onchange="onItemRowFolderChange('${it.key}', this.value)">
+                                    ${folderOptions}
+                                </select>
+                                <span class="suffix-text">分类</span>
+                            </div>
+                        </div>
+                        <!-- 第二行：名称在中间，删除在左，保存在右，高度严格28px -->
+                        <div class="mgr-field-row">
+                            <input type="text" class="sci-input mgr-name-input" id="mgr-edit-item-name-${it.key}" value="${it.name}" placeholder="物品名称">
+                            <div class="btn-group">
+                                <button class="sci-btn-mini danger" onclick="mgrDeleteItem('${it.key}')">删除</button>
+                                <button class="sci-btn-mini" onclick="mgrApplyItem('${it.key}')">使用</button>
+                                <button class="sci-btn-mini sci-btn-primary" onclick="mgrSaveItemEdit('${it.key}')">保存</button>
+                            </div>
+                        </div>
+                        <!-- 第三行：长宽高尺寸，高度严格28px -->
+                        <div class="grid-3col">
+                            <div class="input-with-label"><input type="number" class="sci-input" id="mgr-edit-item-l-${it.key}" value="${toDisplay(it.dims[0])}"><span class="suffix-text">长 <b class="u-lab">${curUnit}</b></span></div>
+                            <div class="input-with-label"><input type="number" class="sci-input" id="mgr-edit-item-w-${it.key}" value="${toDisplay(it.dims[1])}"><span class="suffix-text">宽 <b class="u-lab">${curUnit}</b></span></div>
+                            <div class="input-with-label"><input type="number" class="sci-input" id="mgr-edit-item-h-${it.key}" value="${toDisplay(it.dims[2])}"><span class="suffix-text">高 <b class="u-lab">${curUnit}</b></span></div>
+                        </div>
+                    </div>
+                `}).join('');
+
+                folderCard.innerHTML = `
+                    <div class="mgr-folder-title">
+                        <div style="display:flex; align-items:center; gap:6px; flex:1;" onclick="toggleFolderCollapse('item', '${folderName}')">
+                            <span>${isCollapsed ? '▶' : '▼'} 📁 <b>${folderName}</b></span>
+                            <span style="font-size:0.68rem; color:var(--text-muted); font-weight:normal;">(${items.length} 规格)</span>
+                        </div>
+                        <button class="sci-btn-mini" style="height:22px; font-size:0.65rem;" onclick="renameFolder('item', '${folderName}')">✏️ 改分类名</button>
+                    </div>
+                    <div class="mgr-folder-content ${isCollapsed ? 'collapsed' : ''}">${rowsHTML}</div>
+                `;
+                container.appendChild(folderCard);
+            }
+        }
+
+        function onItemRowFolderChange(k, val) {
+            if (val === '__NEW__') {
+                const name = prompt('请输入新分类名称:');
+                if (name && name.trim()) {
+                    ITEM_PRESETS[k].folder = name.trim();
+                    saveItemsToStorage();
+                    refreshPresetsDropdowns();
+                    renderManagerItemsList();
+                } else {
+                    renderManagerItemsList();
+                }
+            } else {
+                ITEM_PRESETS[k].folder = val;
+                saveItemsToStorage();
+                refreshPresetsDropdowns();
+                renderManagerItemsList();
+            }
+        }
+
+        function renderManagerBoxesList() {
+            const container = document.getElementById('mgr-boxes-folder-container');
+            container.innerHTML = '';
+
+            const allFolders = getFolders('box');
+            const folders = {};
+            for (const [k, b] of Object.entries(BOX_PRESETS)) {
+                const f = b.folder || '自定义箱';
+                if (!folders[f]) folders[f] = [];
+                folders[f].push({ key: k, ...b });
+            }
+
+            for (const [folderName, items] of Object.entries(folders)) {
+                const isCollapsed = !!folderCollapseState.box[folderName];
+                const folderCard = document.createElement('div');
+                folderCard.className = 'mgr-folder-block';
+
+                let rowsHTML = items.map(b => {
+                    const folderOptions = allFolders.map(f => `<option value="${f}" ${f===(b.folder||folderName)?'selected':''}>${f}</option>`).join('') + `<option value="__NEW__">➕ 新建分类...</option>`;
+
+                    return `
+                    <div class="mgr-item-card">
+                        <!-- 第一行：分类在上方，高度严格28px -->
+                        <div class="mgr-field-row">
+                            <div class="input-with-label">
+                                <select class="sci-select" id="mgr-edit-box-folder-${b.key}" onchange="onBoxRowFolderChange('${b.key}', this.value)">
+                                    ${folderOptions}
+                                </select>
+                                <span class="suffix-text">分类</span>
+                            </div>
+                        </div>
+                        <!-- 第二行：名称在中间，删除在左，保存在右，高度严格28px -->
+                        <div class="mgr-field-row">
+                            <input type="text" class="sci-input mgr-name-input" id="mgr-edit-box-name-${b.key}" value="${b.name}" placeholder="纸箱名称">
+                            <div class="btn-group">
+                                <button class="sci-btn-mini danger" onclick="mgrDeleteBox('${b.key}')">删除</button>
+                                <button class="sci-btn-mini" onclick="mgrApplyBox('${b.key}')">使用</button>
+                                <button class="sci-btn-mini sci-btn-primary" onclick="mgrSaveBoxEdit('${b.key}')">保存</button>
+                            </div>
+                        </div>
+                        <!-- 第三行：长宽高尺寸，高度严格28px -->
+                        <div class="grid-3col">
+                            <div class="input-with-label"><input type="number" class="sci-input" id="mgr-edit-box-l-${b.key}" value="${toDisplay(b.dims[0])}"><span class="suffix-text">长 <b class="u-lab">${curUnit}</b></span></div>
+                            <div class="input-with-label"><input type="number" class="sci-input" id="mgr-edit-box-w-${b.key}" value="${toDisplay(b.dims[1])}"><span class="suffix-text">宽 <b class="u-lab">${curUnit}</b></span></div>
+                            <div class="input-with-label"><input type="number" class="sci-input" id="mgr-edit-box-h-${b.key}" value="${toDisplay(b.dims[2])}"><span class="suffix-text">高 <b class="u-lab">${curUnit}</b></span></div>
+                        </div>
+                    </div>
+                `}).join('');
+
+                folderCard.innerHTML = `
+                    <div class="mgr-folder-title">
+                        <div style="display:flex; align-items:center; gap:6px; flex:1;" onclick="toggleFolderCollapse('box', '${folderName}')">
+                            <span>${isCollapsed ? '▶' : '▼'} 📁 <b>${folderName}</b></span>
+                            <span style="font-size:0.68rem; color:var(--text-muted); font-weight:normal;">(${items.length} 规格)</span>
+                        </div>
+                        <button class="sci-btn-mini" style="height:22px; font-size:0.65rem;" onclick="renameFolder('box', '${folderName}')">✏️ 改分类名</button>
+                    </div>
+                    <div class="mgr-folder-content ${isCollapsed ? 'collapsed' : ''}">${rowsHTML}</div>
+                `;
+                container.appendChild(folderCard);
+            }
+        }
+
+        function onBoxRowFolderChange(k, val) {
+            if (val === '__NEW__') {
+                const name = prompt('请输入新分类名称:');
+                if (name && name.trim()) {
+                    BOX_PRESETS[k].folder = name.trim();
+                    saveBoxesToStorage();
+                    refreshPresetsDropdowns();
+                    renderManagerBoxesList();
+                } else {
+                    renderManagerBoxesList();
+                }
+            } else {
+                BOX_PRESETS[k].folder = val;
+                saveBoxesToStorage();
+                refreshPresetsDropdowns();
+                renderManagerBoxesList();
+            }
+        }
+
+        function renameFolder(type, oldName) {
+            const newName = prompt(`请输入分类夹【${oldName}】的新名称:`, oldName);
+            if (!newName || newName.trim() === '' || newName.trim() === oldName) return;
+            const targetName = newName.trim();
+
+            if (type === 'item') {
+                for (const k in ITEM_PRESETS) {
+                    if (ITEM_PRESETS[k].folder === oldName) {
+                        ITEM_PRESETS[k].folder = targetName;
+                    }
+                }
+                saveItemsToStorage();
+                renderManagerItemsList();
+            } else {
+                for (const k in BOX_PRESETS) {
+                    if (BOX_PRESETS[k].folder === oldName) {
+                        BOX_PRESETS[k].folder = targetName;
+                    }
+                }
+                saveBoxesToStorage();
+                renderManagerBoxesList();
+            }
+            refreshPresetsDropdowns();
+        }
+
+        function mgrSubmitNewItem() {
+            let name = document.getElementById('mgr-add-item-name').value.trim();
+            if (!name) name = `物品_${Date.now().toString().slice(-4)}`;
+            if (!name.includes('】')) name += '】';
+            
+            let folder = document.getElementById('mgr-add-item-folder-select').value;
+            if (folder === '__NEW__' || !folder) folder = '默认物品';
+
+            const l = toInternal(parseFloat(document.getElementById('mgr-add-item-l').value) || 10);
+            const w = toInternal(parseFloat(document.getElementById('mgr-add-item-w').value) || 10);
+            const h = toInternal(parseFloat(document.getElementById('mgr-add-item-h').value) || 10);
+
+            const key = 'it_' + Date.now();
+            ITEM_PRESETS[key] = { name: name, folder: folder, dims: [l, w, h] };
+            saveItemsToStorage();
+            refreshPresetsDropdowns();
+            renderManagerItemsList();
+
+            document.getElementById('mgr-add-item-name').value = '';
+            document.getElementById('mgr-add-item-l').value = '';
+            document.getElementById('mgr-add-item-w').value = '';
+            document.getElementById('mgr-add-item-h').value = '';
+        }
+
+        function mgrSaveItemEdit(k) {
+            const name = document.getElementById(`mgr-edit-item-name-${k}`).value.trim() || '未命名';
+            const folder = document.getElementById(`mgr-edit-item-folder-${k}`).value;
+            const l = toInternal(parseFloat(document.getElementById(`mgr-edit-item-l-${k}`).value) || 1);
+            const w = toInternal(parseFloat(document.getElementById(`mgr-edit-item-w-${k}`).value) || 1);
+            const h = toInternal(parseFloat(document.getElementById(`mgr-edit-item-h-${k}`).value) || 1);
+
+            ITEM_PRESETS[k] = { name: name, folder: folder, dims: [l, w, h] };
+            saveItemsToStorage();
+            refreshPresetsDropdowns();
+            renderManagerItemsList();
+            if (currentItemName === name || document.getElementById('item-preset-select').value === k) {
+                itemSize = { l, w, h };
+                currentItemName = name;
+                updateInputDisplays();
+                rebuild3D();
+            }
+        }
+
+        function mgrApplyItem(k) {
+            document.getElementById('item-preset-select').value = k;
+            onItemPresetSelect(k);
+            closeModal('manager-modal');
+        }
+
+        // 删除增加二次确认
+        function mgrDeleteItem(k) {
+            const it = ITEM_PRESETS[k];
+            const name = it ? it.name : '该规格';
+            if (!confirm(`确定要删除物品规格【${name}】吗？此操作不可撤销！`)) return;
+            if (Object.keys(ITEM_PRESETS).length <= 1) { alert('物品库至少需保留一个预设！'); return; }
+            delete ITEM_PRESETS[k];
+            saveItemsToStorage();
+            refreshPresetsDropdowns();
+            renderManagerItemsList();
+        }
+
+        function resetDefaultItems() {
+            if (confirm('确认将物品库完全重置为出厂初始预设？')) {
+                ITEM_PRESETS = JSON.parse(JSON.stringify(INITIAL_ITEM_PRESETS));
+                saveItemsToStorage();
+                refreshPresetsDropdowns();
+                renderManagerItemsList();
+                onItemPresetSelect('pop_single');
+            }
+        }
+
+        function mgrSubmitNewBox() {
+            let name = document.getElementById('mgr-add-box-name').value.trim();
+            if (!name) name = `箱型_${Date.now().toString().slice(-4)}`;
+            if (!name.includes('】')) name += '】';
+            
+            let folder = document.getElementById('mgr-add-box-folder-select').value;
+            if (folder === '__NEW__' || !folder) folder = '自定义箱';
+
+            const l = toInternal(parseFloat(document.getElementById('mgr-add-box-l').value) || 20);
+            const w = toInternal(parseFloat(document.getElementById('mgr-add-box-w').value) || 20);
+            const h = toInternal(parseFloat(document.getElementById('mgr-add-box-h').value) || 20);
+
+            const key = 'bx_' + Date.now();
+            BOX_PRESETS[key] = { name: name, folder: folder, dims: [l, w, h] };
+            saveBoxesToStorage();
+            refreshPresetsDropdowns();
+            renderManagerBoxesList();
+
+            document.getElementById('mgr-add-box-name').value = '';
+            document.getElementById('mgr-add-box-l').value = '';
+            document.getElementById('mgr-add-box-w').value = '';
+            document.getElementById('mgr-add-box-h').value = '';
+        }
+
+        function mgrSaveBoxEdit(k) {
+            const name = document.getElementById(`mgr-edit-box-name-${k}`).value.trim() || '未命名箱';
+            const folder = document.getElementById(`mgr-edit-box-folder-${k}`).value;
+            const l = toInternal(parseFloat(document.getElementById(`mgr-edit-box-l-${k}`).value) || 1);
+            const w = toInternal(parseFloat(document.getElementById(`mgr-edit-box-w-${k}`).value) || 1);
+            const h = toInternal(parseFloat(document.getElementById(`mgr-edit-box-h-${k}`).value) || 1);
+
+            BOX_PRESETS[k] = { name: name, folder: folder, dims: [l, w, h] };
+            saveBoxesToStorage();
+            refreshPresetsDropdowns();
+            renderManagerBoxesList();
+            if (currentBoxName === name || document.getElementById('box-preset-select').value === k) {
+                boxSize = { l, w, h };
+                currentBoxName = name;
+                updateInputDisplays();
+                rebuild3D();
+            }
+        }
+
+        function mgrApplyBox(k) {
+            applyBoxPreset(k);
+            closeModal('manager-modal');
+        }
+
+        // 删除增加二次确认
+        function mgrDeleteBox(k) {
+            const b = BOX_PRESETS[k];
+            const name = b ? b.name : '该规格';
+            if (!confirm(`确定要删除纸箱规格【${name}】吗？此操作不可撤销！`)) return;
+            if (Object.keys(BOX_PRESETS).length <= 1) { alert('纸箱库至少需保留一个预设！'); return; }
+            delete BOX_PRESETS[k];
+            saveBoxesToStorage();
+            refreshPresetsDropdowns();
+            renderManagerBoxesList();
+        }
+
+        function resetDefaultBoxes() {
+            if (confirm('确认将纸箱库完全重置为出厂初始预设？')) {
+                BOX_PRESETS = JSON.parse(JSON.stringify(INITIAL_BOX_PRESETS));
+                saveBoxesToStorage();
+                refreshPresetsDropdowns();
+                renderManagerBoxesList();
+                applyBoxPreset('p05');
+            }
+        }
+
+        function openSaveItemModal() { openModal('save-item-modal'); }
+        function confirmSaveCustomItem() {
+            let name = document.getElementById('custom-item-name').value.trim();
+            if (!name) name = `物品_${Date.now().toString().slice(-4)}`;
+            if (!name.includes('】')) name += '】';
+            const folder = document.getElementById('save-item-folder-select').value || '自定义物品';
+            const key = 'it_' + Date.now();
+            ITEM_PRESETS[key] = { name: name, folder: folder, dims: [itemSize.l, itemSize.w, itemSize.h] };
+            saveItemsToStorage();
+            currentItemName = name;
+            refreshPresetsDropdowns();
+            document.getElementById('item-preset-select').value = key;
+            closeModal('save-item-modal');
+        }
+
+        function openSaveBoxModal() { openModal('save-box-modal'); }
+        function confirmSaveCustomBox() {
+            const folder = document.getElementById('save-box-folder-select').value || '自定义箱';
+            let name = document.getElementById('custom-box-name').value.trim();
+            if (!name) name = `箱型_${Date.now().toString().slice(-4)}`;
+            if (!name.includes('】')) name += '】';
+            const key = 'bx_' + Date.now();
+            BOX_PRESETS[key] = { name: name, folder: folder, dims: [boxSize.l, boxSize.w, boxSize.h] };
+            saveBoxesToStorage();
+            currentBoxName = name;
+            refreshPresetsDropdowns();
+            document.getElementById('box-preset-select').value = key;
+            closeModal('save-box-modal');
+        }
+
+        function onItemPresetSelect(val) {
+            if (val === 'custom_item') {
+                updatePresetSelectHighlight();
+                return;
+            }
+            const it = ITEM_PRESETS[val];
+            if (it) {
+                itemSize = { l: it.dims[0], w: it.dims[1], h: it.dims[2] };
+                currentItemName = it.name;
+                updateInputDisplays();
+                rebuild3D();
+            }
+            updatePresetSelectHighlight();
+        }
+
+        function onBoxSelect(k) {
+            if (k === 'custom') {
+                updatePresetSelectHighlight();
+                return;
+            }
+            applyBoxPreset(k);
+        }
+
+        function applyBoxPreset(k) {
+            const it = BOX_PRESETS[k];
+            if (it) {
+                boxSize = { l: it.dims[0], w: it.dims[1], h: it.dims[2] };
+                currentBoxName = it.name;
+                document.getElementById('box-preset-select').value = k;
+                updateInputDisplays();
+                rebuild3D();
+            }
+            updatePresetSelectHighlight();
+        }
+
+        function setSysUnit(u) { 
+            curUnit = u; 
+            document.getElementById('btn-cm').classList.toggle('active', u==='cm'); 
+            document.getElementById('btn-mm').classList.toggle('active', u==='mm'); 
+            document.querySelectorAll('.u-lab').forEach(el => el.textContent = u);
+            updateInputDisplays(); 
+            renderMultiItemsUI(); 
+            if (document.getElementById('manager-modal').style.display === 'flex') {
+                renderManagerItemsList();
+                renderManagerBoxesList();
+            }
+        }
+        function toDisplay(mm) { return curUnit==='cm'?+(mm/10).toFixed(2):Math.round(mm); }
+        function toInternal(val) { return curUnit==='cm'?val*10:val; }
+
+        function setItemMode(m) { packingMode = m; updateSegment('mode-group', `mode-${m}`); document.getElementById('single-item-container').style.display = (m==='single'?'flex':'none'); document.getElementById('multi-item-container').style.display = (m==='multi'?'flex':'none'); rebuild3D(); }
+        
+        function setPosture(type) {
+            let d = [itemSize.l, itemSize.w, itemSize.h].sort((a,b)=>b-a); updateSegment('posture-group', `pos-${type}`);
+            if(type==='stand'){itemSize.h=d[0];itemSize.l=d[1];itemSize.w=d[2];} 
+            else if(type==='flat'){itemSize.h=d[2];itemSize.l=d[0];itemSize.w=d[1];} 
+            else {itemSize.h=d[1];itemSize.l=d[0];itemSize.w=d[2];}
+            updateInputDisplays(); 
+            rebuild3D();
+        }
+        
+        function setFlapState(state) {
+            flapState = state;
+            updateSegment('flap-group', `flap-${state}`);
+            if (state !== 'closed') tapeEnabled = false;
+            rebuild3D();
+        }
+
+        function toggleFlapClosed() {
+            const btn = document.getElementById('flap-closed');
+            if (flapState !== 'closed') {
+                flapState = 'closed';
+                tapeEnabled = false;
+                updateSegment('flap-group', 'flap-closed');
+            } else {
+                tapeEnabled = !tapeEnabled;
+                if (tapeEnabled) { btn.classList.remove('active'); btn.classList.add('tape-active'); btn.textContent = '闭合'; }
+                else { btn.classList.remove('tape-active'); btn.classList.add('active'); btn.textContent = '闭合'; }
+            }
+            rebuild3D();
+        }
+
+        function onCustomPadInput(val) {
+            const num = parseFloat(val);
+            if (!isNaN(num) && num >= 0) {
+                paddingThickness = toInternal(num);
+                rebuild3D();
+            } else if (val === '') {
+                paddingThickness = 0;
+                rebuild3D();
+            }
+        }
+        
+        function onCustomGapInput(val) { 
+            const num = parseFloat(val); 
+            if(!isNaN(num) && num>=0){ 
+                expectedGap = toInternal(num); 
+                evaluateFitting(); 
+            } else if (val === '') {
+                expectedGap = 0;
+                evaluateFitting();
+            }
+        }
+
+        function onPhoneSizeChange() {
+            refPhoneSize.l = toInternal(parseFloat(document.getElementById('in-phone-l').value) || 14.7);
+            refPhoneSize.w = toInternal(parseFloat(document.getElementById('in-phone-w').value) || 7.2);
+            refPhoneSize.h = toInternal(parseFloat(document.getElementById('in-phone-h').value) || 0.8);
+            rebuildRefObjects();
+        }
+
+        function onItemParamChange() {
+            document.getElementById('item-preset-select').value='custom_item';
+            currentItemName="自定物品";
+            itemSize.l=Math.max(1,toInternal(parseFloat(document.getElementById('in-item-l').value)||1));
+            itemSize.w=Math.max(1,toInternal(parseFloat(document.getElementById('in-item-w').value)||1));
+            itemSize.h=Math.max(1,toInternal(parseFloat(document.getElementById('in-item-h').value)||1));
+            rebuild3D();
+            updatePresetSelectHighlight();
+        }
+        function onMatrixChange() { matrixCount.x=Math.max(1,parseInt(document.getElementById('matrix-x').value)||1); matrixCount.y=Math.max(1,parseInt(document.getElementById('matrix-y').value)||1); matrixCount.z=Math.max(1,parseInt(document.getElementById('matrix-z').value)||1); rebuild3D(); }
+
+        function onBoxParamChange() {
+            document.getElementById('box-preset-select').value='custom';
+            currentBoxName="自定纸箱";
+            boxSize.l=Math.max(1,toInternal(parseFloat(document.getElementById('in-box-l').value)||1));
+            boxSize.w=Math.max(1,toInternal(parseFloat(document.getElementById('in-box-w').value)||1));
+            boxSize.h=Math.max(1,toInternal(parseFloat(document.getElementById('in-box-h').value)||1));
+            rebuild3D();
+            updatePresetSelectHighlight();
+        }
+
+        function updateInputDisplays() {
+            document.getElementById('in-item-l').value = toDisplay(itemSize.l);
+            document.getElementById('in-item-w').value = toDisplay(itemSize.w);
+            document.getElementById('in-item-h').value = toDisplay(itemSize.h);
+
+            document.getElementById('in-box-l').value = toDisplay(boxSize.l);
+            document.getElementById('in-box-w').value = toDisplay(boxSize.w);
+            document.getElementById('in-box-h').value = toDisplay(boxSize.h);
+
+            document.getElementById('in-custom-pad').value = paddingThickness === 0 ? '' : toDisplay(paddingThickness);
+            document.getElementById('in-custom-gap').value = expectedGap === 0 ? '' : toDisplay(expectedGap);
+
+            document.getElementById('in-phone-l').value = toDisplay(refPhoneSize.l);
+            document.getElementById('in-phone-w').value = toDisplay(refPhoneSize.w);
+            document.getElementById('in-phone-h').value = toDisplay(refPhoneSize.h);
+
+            evaluateFitting();
+            updatePresetSelectHighlight();
+        }
+        function syncUI() { updateInputDisplays(); rebuild3D(); }
+
+        function renderMultiItemsUI() {
+            const container = document.getElementById('multi-items-list'); container.innerHTML = '';
+            multiItemList.forEach((it, idx) => {
+                const row = document.createElement('div'); row.className = 'multi-item-card';
+                row.innerHTML = `
+                    <div style="display:flex; justify-content:space-between; align-items:center; gap:4px;">
+                        <input type="text" class="sci-input" value="${it.name}" style="height:28px !important; font-weight:700; color:var(--cyan); flex:1;" onchange="updateMultiItemProp(${idx}, 'name', this.value)">
+                        <div class="segmented-control" style="max-width:110px;">
+                            <button class="seg-btn ${it.rot==='flat'?'active':''}" onclick="setMultiItemRot(${idx}, 'flat')">平</button>
+                            <button class="seg-btn ${it.rot==='stand'?'active':''}" onclick="setMultiItemRot(${idx}, 'stand')">立</button>
+                            <button class="seg-btn ${it.rot==='side'?'active':''}" onclick="setMultiItemRot(${idx}, 'side')">侧</button>
+                        </div>
+                        <button class="icon-btn" style="width:28px; height:28px !important; color:#ef4444;" onclick="removeMultiItemRow(${idx})">✕</button>
+                    </div>
+                    <div class="grid-3col">
+                        <div class="input-with-label"><input type="number" class="sci-input" value="${toDisplay(it.l)}" oninput="updateMultiItemProp(${idx}, 'l', this.value)"><span class="suffix-text">长 <b class="u-lab">${curUnit}</b></span></div>
+                        <div class="input-with-label"><input type="number" class="sci-input" value="${toDisplay(it.w)}" oninput="updateMultiItemProp(${idx}, 'w', this.value)"><span class="suffix-text">宽 <b class="u-lab">${curUnit}</b></span></div>
+                        <div class="input-with-label"><input type="number" class="sci-input" value="${toDisplay(it.h)}" oninput="updateMultiItemProp(${idx}, 'h', this.value)"><span class="suffix-text">高 <b class="u-lab">${curUnit}</b></span></div>
+                    </div>`;
+                container.appendChild(row);
+            });
+        }
+
+        function setMultiItemRot(idx, rot) {
+            const it = multiItemList[idx];
+            it.rot = rot;
+            let d = [it.l, it.w, it.h].sort((a,b)=>b-a);
+            if(rot==='stand'){ it.h=d[0]; it.l=d[1]; it.w=d[2]; }
+            else if(rot==='flat'){ it.h=d[2]; it.l=d[0]; it.w=d[1]; }
+            else { it.h=d[1]; it.l=d[0]; it.w=d[2]; }
+            renderMultiItemsUI();
+            solveOptimalMultiPacking(false);
+        }
+
+        function addMultiItemRow() {
+            multiItemList.push({ id: Date.now(), name: `物品 ${String.fromCharCode(65 + multiItemList.length)}`, l: 150, w: 100, h: 100, rot: 'flat', posX:0, posY:0, posZ:0 });
+            renderMultiItemsUI();
+            solveOptimalMultiPacking(false);
+        }
+
+        function removeMultiItemRow(idx) {
+            if (multiItemList.length <= 1) { alert('至少保留一件物品！'); return; }
+            multiItemList.splice(idx, 1);
+            renderMultiItemsUI();
+            solveOptimalMultiPacking(false);
+        }
+
+        function updateMultiItemProp(idx, prop, val) {
+            if (prop === 'name') multiItemList[idx].name = val;
+            else multiItemList[idx][prop] = Math.max(1, toInternal(parseFloat(val) || 1));
+            solveOptimalMultiPacking(false);
+        }
+
+        function solveOptimalMultiPacking(optimizeRotations=true) {
+            const pad = paddingThickness * 2;
+            const gap = ITEM_SURFACE_GAP;
+            const strategies = ['stack_y', 'line_x', 'line_z'];
+            let bestConfig = null;
+            let bestPaperBoxVol = Infinity;
+
+            strategies.forEach(strat => {
+                let sortedItems = [...multiItemList].map((it, idx) => ({ ...it, originalIdx: idx }));
+                if (strat === 'stack_y') {
+                    sortedItems.sort((a,b) => (b.l * b.w) - (a.l * a.w));
+                }
+
+                let curX = 0, curZ = 0, curY = 0;
+                let bMaxX = 0, bMaxZ = 0, bMaxY = 0;
+                let tempPositions = [];
+
+                sortedItems.forEach(it => {
+                    let il = it.l, iw = it.w, ih = it.h;
+                    if (optimizeRotations) {
+                        let d = [il, iw, ih].sort((a,b)=>b-a);
+                        if (strat === 'stack_y') {
+                            ih = d[2]; il = d[0]; iw = d[1];
+                        }
+                    }
+
+                    const fullL = il + pad;
+                    const fullW = iw + pad;
+                    const fullH = ih + pad;
+
+                    let px = 0, py = 0, pz = 0;
+                    if (strat === 'stack_y') {
+                        px = fullL / 2;
+                        pz = fullW / 2;
+                        py = curY + fullH / 2;
+                        curY += fullH + gap;
+                        bMaxX = Math.max(bMaxX, fullL);
+                        bMaxZ = Math.max(bMaxZ, fullW);
+                        bMaxY = curY;
+                    } else if (strat === 'line_x') {
+                        px = curX + fullL / 2;
+                        pz = fullW / 2;
+                        py = fullH / 2;
+                        curX += fullL + gap;
+                        bMaxX = curX;
+                        bMaxZ = Math.max(bMaxZ, fullW);
+                        bMaxY = Math.max(bMaxY, fullH);
+                    } else if (strat === 'line_z') {
+                        px = fullL / 2;
+                        pz = curZ + fullW / 2;
+                        py = fullH / 2;
+                        curZ += fullW + gap;
+                        bMaxX = Math.max(bMaxX, fullL);
+                        bMaxZ = curZ;
+                        bMaxY = Math.max(bMaxY, fullH);
+                    }
+
+                    tempPositions.push({ originalIdx: it.originalIdx, px, py, pz, il, iw, ih });
+                });
+
+                const reqSorted = [bMaxX + expectedGap*2, bMaxZ + expectedGap*2, bMaxY + expectedGap*2].sort((a,b)=>b-a);
+                let minMatchedBoxVol = Infinity;
+
+                for (const box of Object.values(BOX_PRESETS)) {
+                    const bDims = [...box.dims].sort((a,b)=>b-a);
+                    if (reqSorted[0] <= bDims[0] && reqSorted[1] <= bDims[1] && reqSorted[2] <= bDims[2]) {
+                        const v = box.dims[0] * box.dims[1] * box.dims[2];
+                        if (v < minMatchedBoxVol) minMatchedBoxVol = v;
+                    }
+                }
+
+                const score = minMatchedBoxVol !== Infinity ? minMatchedBoxVol : (bMaxX * bMaxZ * bMaxY * 2);
+                if (score < bestPaperBoxVol) {
+                    bestPaperBoxVol = score;
+                    bestConfig = tempPositions;
+                }
+            });
+
+            if (bestConfig) {
+                bestConfig.forEach(pos => {
+                    const it = multiItemList[pos.originalIdx];
+                    it.l = pos.il; it.w = pos.iw; it.h = pos.ih;
+                    it.posX = pos.px; it.posY = pos.py; it.posZ = pos.pz;
+                });
+            }
+
+            renderMultiItemsUI();
+            rebuild3D();
+        }
+
+        function autoOrientItem() {
+            if(packingMode==='multi') return;
+            let d = [itemSize.l, itemSize.w, itemSize.h].sort((a,b)=>b-a);
+            itemSize.l = d[0]; itemSize.w = d[1]; itemSize.h = d[2];
+            setPosture('flat');
+        }
+
+        const FLOOR_OFFSET = 0.2;
+
+        function getEffectiveItemBoundingBox() {
+            if(packingMode==='single') {
+                return {
+                    totL:(itemSize.l+paddingThickness*2)*matrixCount.x + Math.max(0, matrixCount.x-1)*ITEM_SURFACE_GAP,
+                    totW:(itemSize.w+paddingThickness*2)*matrixCount.z + Math.max(0, matrixCount.z-1)*ITEM_SURFACE_GAP,
+                    totH:(itemSize.h+paddingThickness*2)*matrixCount.y + Math.max(0, matrixCount.y-1)*ITEM_SURFACE_GAP,
+                    rawVol:(itemSize.l*itemSize.w*itemSize.h*matrixCount.x*matrixCount.y*matrixCount.z)/1000000
+                };
+            } else {
+                let minX = Infinity, maxX = -Infinity, minZ = Infinity, maxZ = -Infinity, maxY = 0, vol = 0;
+                multiItemList.forEach(it => {
+                    const hwL = it.l / 2 + paddingThickness;
+                    const hwW = it.w / 2 + paddingThickness;
+                    minX = Math.min(minX, it.posX - hwL);
+                    maxX = Math.max(maxX, it.posX + hwL);
+                    minZ = Math.min(minZ, it.posZ - hwW);
+                    maxZ = Math.max(maxZ, it.posZ + hwW);
+                    maxY = Math.max(maxY, it.posY + it.h/2 + paddingThickness);
+                    vol += (it.l * it.w * it.h) / 1000000;
+                });
+                return {
+                    totL: Math.max(0, maxX - minX),
+                    totW: Math.max(0, maxZ - minZ),
+                    totH: maxY,
+                    rawVol: vol
+                };
+            }
+        }
+
+        function evaluateFitting() {
+            const { totL, totW, totH, rawVol } = getEffectiveItemBoundingBox();
+            
+            const reqL = totL + expectedGap * 2;
+            const reqW = totW + expectedGap * 2;
+            const reqH = totH + expectedGap * 2;
+
+            const fitsCurrent = (reqL <= boxSize.l && reqW <= boxSize.w && reqH <= boxSize.h);
+            const reqSorted = [reqL, reqW, reqH].sort((a,b)=>b-a);
+            const boxSorted = [boxSize.l, boxSize.w, boxSize.h].sort((a,b)=>b-a);
+            const fitsRotated = (reqSorted[0] <= boxSorted[0] && reqSorted[1] <= boxSorted[1] && reqSorted[2] <= boxSorted[2]);
+
+            const boxVol = (boxSize.l * boxSize.w * boxSize.h) / 1000000;
+            const fillRate = Math.min(100, Math.round((rawVol / boxVol) * 100));
+
+            document.getElementById('match-box-title').textContent = `🎯 当前纸箱：${currentBoxName}`;
+            document.getElementById('match-box-dims').textContent = `(${toDisplay(boxSize.l)}×${toDisplay(boxSize.w)}×${toDisplay(boxSize.h)} ${curUnit})`;
+
+            const mb = document.getElementById('status-main-badge');
+            const sFr = document.getElementById('status-fill-rate');
+            const ss = document.getElementById('status-sub');
+            const sc = document.getElementById('status-card');
+
+            if (fitsCurrent) {
+                sc.className = 'status-box status-fit';
+                mb.textContent = `✅ 完美装入`;
+                sFr.textContent = `(利用率 ${fillRate}%)`;
+                sFr.style.display = 'block';
+                ss.innerHTML = `余量: 长+${toDisplay(boxSize.l - reqL)}${curUnit} 宽+${toDisplay(boxSize.w - reqW)}${curUnit} 高+${toDisplay(boxSize.h - reqH)}${curUnit}`;
+            } else if (fitsRotated) {
+                sc.className = 'status-box status-fit';
+                mb.textContent = `🔄 纸箱立起可装入`;
+                sFr.textContent = `(利用率 ${fillRate}%)`;
+                sFr.style.display = 'block';
+                ss.innerHTML = `纸箱旋转/立起即可完全容纳！建议点击下方一键匹配自动摆正纸箱。`;
+            } else {
+                sc.className = 'status-box status-over';
+                mb.textContent = '❌ 尺寸不足';
+                sFr.style.display = 'none';
+                const overL = Math.max(0, reqL - boxSize.l);
+                const overW = Math.max(0, reqW - boxSize.w);
+                const overH = Math.max(0, reqH - boxSize.h);
+                ss.innerHTML = `长超 ${toDisplay(overL)}${curUnit} / 宽超 ${toDisplay(overW)}${curUnit} / 高超 ${toDisplay(overH)}${curUnit}`;
+            }
+        }
+
+        function autoFitBestBox() {
+            if (packingMode === 'multi') {
+                solveOptimalMultiPacking(true);
+            }
+
+            const totalExtra = expectedGap * 2;
+            const { totL, totW, totH } = getEffectiveItemBoundingBox();
+            
+            const reqL = totL + totalExtra;
+            const reqW = totW + totalExtra;
+            const reqH = totH + totalExtra;
+            const reqSorted = [reqL, reqW, reqH].sort((a,b)=>b-a);
+
+            let bestBoxKey = null;
+            let bestBoxOrientation = null;
+            let minVol = Infinity;
+
+            for (const [k, box] of Object.entries(BOX_PRESETS)) {
+                const bDimsSorted = [...box.dims].sort((a,b)=>b-a);
+
+                if (reqSorted[0] <= bDimsSorted[0] && reqSorted[1] <= bDimsSorted[1] && reqSorted[2] <= bDimsSorted[2]) {
+                    const v = box.dims[0] * box.dims[1] * box.dims[2];
+                    if (v < minVol) {
+                        minVol = v;
+                        bestBoxKey = k;
+
+                        const perms = [
+                            [box.dims[0], box.dims[1], box.dims[2]],
+                            [box.dims[0], box.dims[2], box.dims[1]],
+                            [box.dims[1], box.dims[0], box.dims[2]],
+                            [box.dims[1], box.dims[2], box.dims[0]],
+                            [box.dims[2], box.dims[0], box.dims[1]],
+                            [box.dims[2], box.dims[1], box.dims[0]]
+                        ];
+
+                        let matchedOrient = null;
+                        for (const [bl, bw, bh] of perms) {
+                            if (reqL <= bl && reqW <= bw && reqH <= bh) {
+                                matchedOrient = [bl, bw, bh];
+                                break;
+                            }
+                        }
+                        bestBoxOrientation = matchedOrient || [bDimsSorted[0], bDimsSorted[1], bDimsSorted[2]];
+                    }
+                }
+            }
+
+            if (bestBoxKey && bestBoxOrientation) {
+                currentBoxName = BOX_PRESETS[bestBoxKey].name;
+                document.getElementById('box-preset-select').value = bestBoxKey;
+                
+                boxSize.l = bestBoxOrientation[0];
+                boxSize.w = bestBoxOrientation[1];
+                boxSize.h = bestBoxOrientation[2];
+
+                updateInputDisplays();
+                rebuild3D();
+            } else {
+                alert('当前箱库无合适纸箱，请调小预留缝隙或在资源库中新增自定义箱型！');
+            }
+        }
+
+        function init3D() {
+            const container = document.getElementById('viewport-3d'); scene = new THREE.Scene(); scene.background = new THREE.Color(0xf1f5f9);
+            camera = new THREE.PerspectiveCamera(40, container.clientWidth/container.clientHeight, 1, 7000); camera.position.set(560, 520, 720);
+            renderer = new THREE.WebGLRenderer({ canvas: document.getElementById('canvas3d'), antialias: true }); renderer.setSize(container.clientWidth, container.clientHeight); renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+            
+            controls = new THREE.OrbitControls(camera, renderer.domElement); 
+            controls.enableDamping = true; controls.dampingFactor = 0.08;
+            controls.target.set(0, boxSize.h / 2, 0);
+            controls.enablePan = true;
+            controls.panSpeed = 1.0;
+            controls.screenSpacePanning = true; 
+            
+            controls.mouseButtons = { 
+                LEFT: THREE.MOUSE.PAN, 
+                MIDDLE: THREE.MOUSE.ROTATE, 
+                RIGHT: THREE.MOUSE.ROTATE 
+            };
+            
+            controls.touches = { 
+                ONE: THREE.TOUCH.PAN, 
+                TWO: THREE.TOUCH.DOLLY_ROTATE 
+            };
+
+            renderer.domElement.addEventListener('dblclick', () => {
+                resetCameraView();
+            });
+
+            scene.add(new THREE.AmbientLight(0xffffff, 0.95)); const dirLight = new THREE.DirectionalLight(0xffffff, 0.65); dirLight.position.set(400, 800, 400); scene.add(dirLight);
+            gridHelper = new THREE.GridHelper(1600, 32, 0x0284c7, 0xcbd5e1); gridHelper.position.y = 0; gridHelper.material.transparent = true; gridHelper.material.opacity = 0.28; scene.add(gridHelper);
+
+            boxGroup=new THREE.Group(); itemsGroup=new THREE.Group(); padGroup=new THREE.Group(); refsGroup=new THREE.Group();
+            scene.add(boxGroup); scene.add(itemsGroup); scene.add(padGroup); scene.add(refsGroup);
+            rebuildRefObjects();
+            window.addEventListener('resize', () => { camera.aspect = container.clientWidth / container.clientHeight; camera.updateProjectionMatrix(); renderer.setSize(container.clientWidth, container.clientHeight); });
+        }
+
+        // 回正：仅把中心点(target)归位，相机视角与缩放保持不变
+        function resetCameraView() {
+            const newTarget = new THREE.Vector3(0, boxSize.h / 2, 0);
+            const delta = new THREE.Vector3().subVectors(newTarget, controls.target);
+            controls.target.copy(newTarget);
+            camera.position.add(delta);
+            controls.update();
+        }
+
+        function createSmartBoxMaterials(itemName, L, W, H, baseColor, isCarton) {
+            const txtColor = isCarton ? "#1e293b" : "#0f172a";
+
+            function makeTex(w_mm, h_mm, labelX, labelY, labelCenter) {
+                let cw = Math.max(512, Math.round(w_mm * 8)); let ch = Math.max(512, Math.round(h_mm * 8));
+                if(cw > 2048 || ch > 2048) { const ratio = 2048 / Math.max(cw, ch); cw = Math.round(cw * ratio); ch = Math.round(ch * ratio); }
+                
+                const canvas = document.createElement('canvas'); canvas.width = cw; canvas.height = ch;
+                const ctx = canvas.getContext('2d');
+                ctx.fillStyle = baseColor; ctx.fillRect(0, 0, cw, ch);
+                ctx.strokeStyle = isCarton ? "rgba(0,0,0,0.2)" : "rgba(0,0,0,0.1)"; ctx.lineWidth = 8; ctx.strokeRect(4, 4, cw-8, ch-8);
+                
+                ctx.fillStyle = txtColor; ctx.textAlign = "center"; ctx.textBaseline = "middle";
+                const minDim = Math.min(cw, ch);
+                
+                if (labelCenter) { ctx.font = `bold ${Math.max(26, minDim * 0.16)}px sans-serif`; ctx.fillText(labelCenter, cw/2, ch/2); }
+                
+                const eFont = Math.max(18, minDim * 0.1); ctx.font = `bold ${eFont}px monospace`;
+                if (labelX) { ctx.fillText(labelX, cw/2, ch - eFont - 10); }
+                if (labelY) { ctx.save(); ctx.translate(eFont + 10, ch/2); ctx.rotate(-Math.PI/2); ctx.fillText(labelY, 0, 0); ctx.restore(); }
+                
+                const tex = new THREE.CanvasTexture(canvas);
+                return new THREE.MeshStandardMaterial({ map: tex, roughness: isCarton?0.8:0.4, transparent: isCarton && viewMode === 'nest', opacity: isCarton && viewMode === 'nest' ? 0.6 : 1.0, side: isCarton ? THREE.DoubleSide : THREE.FrontSide });
+            }
+
+            const plainMat = new THREE.MeshStandardMaterial({ color: baseColor, roughness: isCarton?0.8:0.4, transparent: isCarton && viewMode === 'nest', opacity: isCarton && viewMode === 'nest' ? 0.6 : 1.0, side: isCarton ? THREE.DoubleSide : THREE.FrontSide });
+            const matRight = makeTex(W, H, `宽:${toDisplay(W)}`, `高:${toDisplay(H)}`, null);
+            const matTop = makeTex(L, W, `长:${toDisplay(L)}`, `宽:${toDisplay(W)}`, itemName);
+            const matFront = makeTex(L, H, `长:${toDisplay(L)}`, `高:${toDisplay(H)}`, null);
+
+            return [matRight, plainMat, matTop, plainMat, matFront, plainMat];
+        }
+
+        function rebuild3D() {
+            if (!boxGroup) return;
+            while(boxGroup.children.length>0) boxGroup.remove(boxGroup.children[0]);
+            while(itemsGroup.children.length>0) itemsGroup.remove(itemsGroup.children[0]);
+            while(padGroup.children.length>0) padGroup.remove(padGroup.children[0]);
+
+            const boxCol = document.getElementById('picker-box').value;
+            const itemCol = document.getElementById('picker-item').value;
+            
+            const boxGeo = new THREE.BoxGeometry(boxSize.l, boxSize.h, boxSize.w);
+            const boxMats = createSmartBoxMaterials(currentBoxName, boxSize.l, boxSize.w, boxSize.h, boxCol, true);
+            const boxMesh = new THREE.Mesh(boxGeo, boxMats);
+            boxMesh.position.set(0, boxSize.h / 2, 0);
+            boxMesh.add(new THREE.LineSegments(new THREE.EdgesGeometry(boxGeo), new THREE.LineBasicMaterial({ color: isDarkMode?0x38bdf8:0x8c5a2b, linewidth: 2 })));
+            boxGroup.add(boxMesh);
+
+            const fT = 2;
+            const fMat = new THREE.MeshStandardMaterial({ color: boxCol, roughness: 0.8, side: THREE.DoubleSide, transparent: true, opacity: viewMode === 'nest' ? 0.6 : 1.0 });
+            
+            const hF = new THREE.Group(); hF.position.set(0, boxSize.h, boxSize.w/2); const mF = new THREE.Mesh(new THREE.BoxGeometry(boxSize.l, fT, boxSize.w/2), fMat); mF.position.set(0, fT/2, -boxSize.w/4); hF.add(mF); boxGroup.add(hF);
+            const hB = new THREE.Group(); hB.position.set(0, boxSize.h, -boxSize.w/2); const mB = new THREE.Mesh(new THREE.BoxGeometry(boxSize.l, fT, boxSize.w/2), fMat); mB.position.set(0, fT/2, boxSize.w/4); hB.add(mB); boxGroup.add(hB);
+            const hL = new THREE.Group(); hL.position.set(-boxSize.l/2, boxSize.h, 0); const mL = new THREE.Mesh(new THREE.BoxGeometry(boxSize.w/2, fT, boxSize.w), fMat); mL.position.set(boxSize.w/4, fT/2, 0); hL.add(mL); boxGroup.add(hL);
+            const hR = new THREE.Group(); hR.position.set(boxSize.l/2, boxSize.h, 0); const mR = new THREE.Mesh(new THREE.BoxGeometry(boxSize.w/2, fT, boxSize.w), fMat); mR.position.set(-boxSize.w/4, fT/2, 0); hR.add(mR); boxGroup.add(hR);
+
+            if (flapState === 'closed') { hF.rotation.x = 0; hB.rotation.x = 0; hL.rotation.z = 0; hR.rotation.z = 0; } 
+            else if (flapState === 'half') { const angHalf = Math.PI * 0.75; hF.rotation.x = angHalf; hB.rotation.x = -angHalf; hL.rotation.z = angHalf; hR.rotation.z = -angHalf; } 
+            else if (flapState === 'open') { const angOpen = Math.PI * 1.3; hF.rotation.x = angOpen; hB.rotation.x = -angOpen; hL.rotation.z = angOpen; hR.rotation.z = -angOpen; }
+
+            tapeMesh = new THREE.Mesh(new THREE.BoxGeometry(boxSize.l+6, 1.5, 36), new THREE.MeshStandardMaterial({ color: 0xeab308, roughness: 0.3, transparent: true, opacity: 0.95 }));
+            tapeMesh.position.set(0, boxSize.h+fT+1, 0);
+            boxGroup.add(tapeMesh);
+            tapeMesh.visible = (flapState === 'closed' && tapeEnabled);
+
+            const edgeMat = new THREE.LineBasicMaterial({ color: 0x64748b, linewidth: 1.5 });
+            let { totL, totW, totH } = getEffectiveItemBoundingBox();
+
+            itemsGroup.position.y = FLOOR_OFFSET;
+
+            const padMaterial = new THREE.MeshStandardMaterial({
+                color: 0x0284c7,
+                transparent: true,
+                opacity: 0.25,
+                roughness: 0.1,
+                metalness: 0.1,
+                depthWrite: false
+            });
+
+            if (packingMode === 'single') {
+                const itemMats = createSmartBoxMaterials(currentItemName, itemSize.l, itemSize.w, itemSize.h, itemCol, false);
+                
+                const blockL = itemSize.l + paddingThickness * 2;
+                const blockW = itemSize.w + paddingThickness * 2;
+                const blockH = itemSize.h + paddingThickness * 2;
+                
+                const shiftX = (matrixCount.x * blockL + (matrixCount.x - 1) * ITEM_SURFACE_GAP) / 2;
+                const shiftZ = (matrixCount.z * blockW + (matrixCount.z - 1) * ITEM_SURFACE_GAP) / 2;
+
+                for (let ix=0; ix<matrixCount.x; ix++) {
+                    for (let iy=0; iy<matrixCount.y; iy++) {
+                        for (let iz=0; iz<matrixCount.z; iz++) {
+                            const px = -shiftX + blockL/2 + ix*(blockL + ITEM_SURFACE_GAP);
+                            const py = iy*(blockH + ITEM_SURFACE_GAP) + blockH/2;
+                            const pz = -shiftZ + blockW/2 + iz*(blockW + ITEM_SURFACE_GAP);
+
+                            const iMesh = new THREE.Mesh(new THREE.BoxGeometry(itemSize.l, itemSize.h, itemSize.w), itemMats);
+                            iMesh.add(new THREE.LineSegments(new THREE.EdgesGeometry(new THREE.BoxGeometry(itemSize.l, itemSize.h, itemSize.w)), edgeMat));
+                            iMesh.position.set(px, py, pz);
+                            itemsGroup.add(iMesh);
+
+                            if (paddingThickness > 0) {
+                                const pGeo = new THREE.BoxGeometry(blockL, blockH, blockW);
+                                const pMesh = new THREE.Mesh(pGeo, padMaterial);
+                                pMesh.position.set(px, py, pz);
+                                pMesh.add(new THREE.LineSegments(new THREE.EdgesGeometry(pGeo), new THREE.LineBasicMaterial({ color: 0x0284c7, opacity: 0.4, transparent: true })));
+                                padGroup.add(pMesh);
+                            }
+                        }
+                    }
+                }
+            } else {
+                const shiftX = totL / 2;
+                const shiftZ = totW / 2;
+
+                multiItemList.forEach(it => {
+                    const iMesh = new THREE.Mesh(new THREE.BoxGeometry(it.l, it.h, it.w), createSmartBoxMaterials(it.name, it.l, it.w, it.h, itemCol, false));
+                    iMesh.add(new THREE.LineSegments(new THREE.EdgesGeometry(new THREE.BoxGeometry(it.l, it.h, it.w)), edgeMat));
+                    const px = it.posX - shiftX;
+                    const py = it.posY;
+                    const pz = it.posZ - shiftZ;
+                    iMesh.position.set(px, py, pz);
+                    itemsGroup.add(iMesh);
+
+                    if (paddingThickness > 0) {
+                        const prL = it.l + paddingThickness * 2;
+                        const prH = it.h + paddingThickness * 2;
+                        const prW = it.w + paddingThickness * 2;
+                        const pGeo = new THREE.BoxGeometry(prL, prH, prW);
+                        const pMesh = new THREE.Mesh(pGeo, padMaterial);
+                        pMesh.position.set(px, py, pz);
+                        pMesh.add(new THREE.LineSegments(new THREE.EdgesGeometry(pGeo), new THREE.LineBasicMaterial({ color: 0x0284c7, opacity: 0.4, transparent: true })));
+                        padGroup.add(pMesh);
+                    }
+                });
+            }
+
+            const p = refsGroup.getObjectByName("phone"), c = refsGroup.getObjectByName("can"), a = refsGroup.getObjectByName("a4");
+            if (viewMode === 'nest') {
+                boxGroup.position.set(0,0,0);
+                itemsGroup.position.x=0; itemsGroup.position.z=0;
+                padGroup.position.set(0,0,0);
+                if(p) p.position.set(boxSize.l/2+80, refPhoneSize.h/2, 60);
+                if(c) c.position.set(boxSize.l/2+80, 0, -60);
+                if(a) a.position.set(0, 0.2, -boxSize.w/2-130);
+            } else {
+                const offset = (boxSize.l + totL + 80) / 2;
+                boxGroup.position.set(-offset+boxSize.l/2, 0, 0);
+                itemsGroup.position.x = offset-totL/2; itemsGroup.position.z = 0;
+                padGroup.position.set(offset-totL/2, 0, 0);
+                if(p) p.position.set(offset+totL/2+60, refPhoneSize.h/2, 60);
+                if(c) c.position.set(offset+totL/2+60, 0, -60);
+                if(a) a.position.set(-offset+boxSize.l/2, 0.2, -boxSize.w/2-130);
+            }
+            evaluateFitting();
+        }
+
+        function rebuildRefObjects() {
+            while(refsGroup.children.length > 0) refsGroup.remove(refsGroup.children[0]);
+            
+            const pGeo = new THREE.BoxGeometry(refPhoneSize.w, refPhoneSize.h, refPhoneSize.l);
+            const pMat = new THREE.MeshStandardMaterial({ color: 0x18181b, roughness: 0.2, metalness: 0.8 });
+            const phone = new THREE.Mesh(pGeo, pMat); phone.name = "phone"; phone.position.y = refPhoneSize.h/2; 
+            phone.add(new THREE.LineSegments(new THREE.EdgesGeometry(pGeo), new THREE.LineBasicMaterial({ color: 0x52525b })));
+            refsGroup.add(phone);
+
+            const canGroup = new THREE.Group(); canGroup.name = "can";
+            const canBody = new THREE.Mesh(new THREE.CylinderGeometry(33, 31, 100, 32), new THREE.MeshStandardMaterial({ color: 0xdc2626, roughness: 0.2, metalness: 0.6 }));
+            canBody.position.y = 50; canGroup.add(canBody);
+            const canRim = new THREE.Mesh(new THREE.CylinderGeometry(28, 33, 8, 32), new THREE.MeshStandardMaterial({ color: 0xe2e8f0, roughness: 0.1, metalness: 0.9 }));
+            canRim.position.y = 104; canGroup.add(canRim);
+            const tabMesh = new THREE.Mesh(new THREE.TorusGeometry(5, 1.2, 8, 16), new THREE.MeshStandardMaterial({ color: 0xe2e8f0, roughness: 0.1, metalness: 0.9 }));
+            tabMesh.rotation.x = Math.PI / 2; tabMesh.position.set(0, 108.5, -4); canGroup.add(tabMesh);
+            refsGroup.add(canGroup);
+
+            const a4 = new THREE.Mesh(new THREE.PlaneGeometry(297, 210), new THREE.MeshBasicMaterial({ color: 0xffffff, side: THREE.DoubleSide }));
+            a4.rotation.x = -Math.PI / 2; a4.name = "a4";
+            refsGroup.add(a4);
+            updateRefVisibility();
+        }
+
+        function updateRefVisibility() {
+            const p=refsGroup.getObjectByName("phone"), c=refsGroup.getObjectByName("can"), a=refsGroup.getObjectByName("a4");
+            if(p) p.visible=document.getElementById('ref-phone').checked;
+            if(c) c.visible=document.getElementById('ref-can').checked;
+            if(a) a.visible=document.getElementById('ref-a4').checked;
+        }
+
+        function toggleTheme() {
+            isDarkMode = !isDarkMode;
+            document.body.classList.toggle('dark-mode', isDarkMode); 
+            scene.background = new THREE.Color(isDarkMode?0x090d16:0xf1f5f9);
+            gridHelper.material.color.setHex(isDarkMode?0x38bdf8:0x0284c7);
+            document.getElementById('picker-bg').value=isDarkMode?'#090d16':'#f1f5f9';
+            document.getElementById('picker-box').value=isDarkMode?'#b97a44':'#c58f59';
+            document.getElementById('picker-item').value=isDarkMode?'#cbd5e1':'#ffffff';
+            rebuild3D();
+        }
+
+        function applyCustomColors() { scene.background = new THREE.Color(document.getElementById('picker-bg').value); rebuild3D(); }
+        function setViewMode(m) { viewMode = m; document.getElementById('view-nest').classList.toggle('active', m==='nest'); document.getElementById('view-side').classList.toggle('active', m==='side'); rebuild3D(); }
+        function toggleAutoRotate() { controls.autoRotate = !controls.autoRotate; document.getElementById('btn-autorotate').classList.toggle('active', controls.autoRotate); }
+        function animate() { requestAnimationFrame(animate); controls.update(); renderer.render(scene, camera); }
+    </script>
+</body>
+</html>
