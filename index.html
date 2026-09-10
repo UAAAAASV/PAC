@@ -54,7 +54,12 @@
         #hud-sidebar::-webkit-scrollbar { width: 5px; }
         #hud-sidebar::-webkit-scrollbar-thumb { background: var(--cyan); border-radius: 4px; }
 
-        .hud-header { padding: 10px 14px; border-bottom: 1px solid var(--panel-border); display: flex; justify-content: space-between; align-items: center; background: var(--panel-bg); }
+        .hud-header {
+            position: sticky; top: 0; z-index: 50;
+            padding: 10px 14px; border-bottom: 1px solid var(--panel-border);
+            display: flex; justify-content: space-between; align-items: center;
+            background: var(--panel-bg); backdrop-filter: blur(8px);
+        }
         .hud-title h1 { font-size: 0.95rem; font-weight: 700; color: var(--cyan); letter-spacing: 0.5px; }
         .header-actions { display: flex; align-items: center; gap: 6px; }
         
@@ -83,7 +88,7 @@
 
         .grid-3col { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 5px; width: 100%; }
         
-        /* 强制全站统一高度 28px */
+        /* 统一直角无缝拼接与严格 28px 高度 */
         .input-with-label {
             display: flex; align-items: center; width: 100%;
             background: var(--input-bg); border: 1px solid var(--card-border);
@@ -91,15 +96,26 @@
             overflow: hidden; transition: border-color 0.15s, box-shadow 0.15s; box-sizing: border-box;
         }
         .input-with-label:focus-within { border-color: var(--cyan); box-shadow: 0 0 0 2px var(--cyan-glow); }
-        .input-with-label input.sci-input {
-            flex: 1; border: none; background: transparent; height: 100% !important; min-width: 0;
-            padding: 0 2px; color: var(--text-main); font-size: 0.8rem; font-weight: 700; outline: none; box-shadow: none; border-radius: 0;
+        
+        .input-with-label input.sci-input,
+        .input-with-label select.sci-select {
+            flex: 1; border: none !important; background: transparent !important; height: 100% !important; min-width: 0;
+            padding: 0 4px; color: var(--text-main); font-size: 0.8rem; font-weight: 700; outline: none !important; box-shadow: none !important; border-radius: 0 !important;
             text-align: center; box-sizing: border-box;
         }
+        .input-with-label select.sci-select {
+            text-align: left; padding: 0 6px; font-size: 0.78rem; font-weight: 600;
+        }
+
         .input-with-label .suffix-text {
-            background: var(--bg-base); border-left: 1px solid var(--card-border);
-            padding: 0 6px; font-size: 0.68rem; color: var(--text-muted); font-weight: 600;
+            background: var(--bg-base); border-left: 1px solid var(--card-border); border-radius: 0 !important;
+            padding: 0 5px; font-size: 0.62rem; color: var(--text-muted); font-weight: 600;
             display: flex; align-items: center; justify-content: center; height: 100% !important; white-space: nowrap; pointer-events: none; flex-shrink: 0; box-sizing: border-box;
+        }
+        .suffix-text b.u-lab {
+            font-size: 0.58rem !important;
+            font-weight: 600;
+            margin-left: 1px;
         }
 
         .sci-input, select.sci-select {
@@ -110,7 +126,6 @@
         .sci-input:focus, select.sci-select:focus { border-color: var(--cyan); box-shadow: 0 0 0 2px var(--cyan-glow); }
         select.sci-select { cursor: pointer; }
 
-        /* 下拉框选中预设的特殊高亮显示状态 */
         select.sci-select.preset-selected-active {
             border-color: var(--cyan) !important;
             background-color: rgba(2, 132, 199, 0.08) !important;
@@ -126,7 +141,6 @@
         .tool-row { display: flex; align-items: center; justify-content: space-between; gap: 6px; }
         .tool-title { font-size: 0.7rem; color: var(--text-muted); font-weight: 600; flex-shrink: 0; }
         
-        /* 保证分段控件外部高度严格等于 28px 与其它按钮绝对齐平 */
         .segmented-control {
             display: flex; background: var(--input-bg); border: 1px solid var(--card-border); border-radius: var(--btn-radius);
             padding: 2px; gap: 2px; flex: 1; height: var(--btn-height) !important; min-height: var(--btn-height) !important; max-height: var(--btn-height) !important;
@@ -135,7 +149,7 @@
         .seg-btn {
             flex: 1; height: 100% !important; background: transparent; border: none; color: var(--text-muted);
             font-size: 0.7rem; font-weight: 600; padding: 0 4px; border-radius: 4px; cursor: pointer; transition: all 0.15s;
-            white-space: nowrap; display: flex; align-items: center; justify-content: center; box-sizing: border-box;
+            white-space: nowrap; display: flex; align-items: center; justify-content: center; box-sizing: border-box; user-select: none;
         }
         .seg-btn.active { background: var(--cyan); color: #fff; font-weight: 700; }
         .seg-btn.tape-active { background: #eab308; color: #fff; font-weight: 700; }
@@ -152,14 +166,26 @@
         .sci-btn-primary { background: var(--cyan); color: #fff !important; border-color: var(--cyan); font-weight: 700; }
         .sci-btn-primary:hover { background: var(--cyan-hover); border-color: var(--cyan-hover); }
 
-        .status-box {
-            border-radius: 8px; padding: 10px; display: flex; flex-direction: column; font-size: 0.75rem;
-            transition: all 0.2s ease; gap: 6px;
+        .match-eval-card {
+            border: 1px solid var(--card-border);
+            transition: border-color 0.2s, box-shadow 0.2s;
         }
-        .status-fit { background: #f0f9ff; border: 1px solid #bae6fd; color: #0369a1; }
-        body.dark-mode .status-fit { background: #082f49; border-color: #0c4a6e; color: #7dd3fc; }
-        .status-over { background: #fef2f2; border: 1px solid #fecaca; color: #991b1b; }
-        body.dark-mode .status-over { background: #3b1114; border-color: #7f1d1d; color: #fca5a5; }
+        .match-eval-card.fit-ok { border-color: rgba(2, 132, 199, 0.4); }
+        .match-eval-card.fit-warn { border-color: rgba(234, 179, 8, 0.5); }
+        .match-eval-card.fit-over { border-color: rgba(239, 68, 68, 0.4); }
+
+        .badge-capsule {
+            padding: 2px 8px; border-radius: 20px; font-size: 0.68rem; font-weight: 700;
+            display: inline-flex; align-items: center; gap: 4px;
+        }
+        .badge-capsule.bg-fit { background: rgba(2, 132, 199, 0.12); color: var(--cyan); }
+        .badge-capsule.bg-warn { background: rgba(234, 179, 8, 0.15); color: #b45309; }
+        .badge-capsule.bg-over { background: rgba(239, 68, 68, 0.12); color: #ef4444; }
+
+        .match-info-strip {
+            background: var(--bg-base); border: 1px solid var(--card-border);
+            border-radius: 6px; padding: 6px 8px; display: flex; flex-direction: column; gap: 4px;
+        }
 
         .multi-item-card {
             background: var(--card-bg); border: 1px solid var(--card-border); border-radius: 6px;
@@ -195,7 +221,6 @@
         .ref-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap; }
         .ref-item { display: flex; align-items: center; gap: 4px; cursor: pointer; color: var(--text-main); font-weight: 600; }
 
-        /* 所有弹窗固定内置于视口中央 */
         .modal-mask {
             position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
             background: rgba(0,0,0,0.5); z-index: 1000; display: none; align-items: center;
@@ -208,91 +233,72 @@
         }
         .modal-head { display: flex; justify-content: space-between; align-items: center; font-weight: 700; font-size: 0.95rem; color: var(--cyan); border-bottom: 1px solid var(--panel-border); padding-bottom: 8px; }
 
-        /* 文件夹外部框：白底纯净卡片 */
-        .mgr-folder-block {
-            background: #ffffff;
-            border: 1px solid var(--card-border);
-            border-radius: 8px;
-            padding: 8px 10px;
+        /* 锁定资源管理窗口绝对高度，彻底消除折叠时的界面跳动 */
+        #manager-modal .modal-card {
+            height: 82vh !important;
+            min-height: 82vh !important;
+            max-height: 82vh !important;
+            overflow: hidden !important;
             display: flex;
             flex-direction: column;
-            gap: 6px;
+        }
+
+        #mgr-content-item, #mgr-content-box {
+            flex: 1;
+            min-height: 0;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        #mgr-items-folder-container, #mgr-boxes-folder-container {
+            flex: 1;
+            min-height: 0;
+            overflow-y: auto;
+        }
+
+        .mgr-folder-block {
+            background: #ffffff; border: 1px solid var(--card-border); border-radius: 8px;
+            padding: 8px 10px; display: flex; flex-direction: column; gap: 6px;
         }
         body.dark-mode .mgr-folder-block { background: var(--card-bg); }
 
         .mgr-folder-title {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            font-size: 0.78rem;
-            font-weight: 700;
-            color: var(--cyan);
-            cursor: pointer;
-            user-select: none;
-            padding: 2px 0;
+            display: flex; justify-content: space-between; align-items: center;
+            font-size: 0.78rem; font-weight: 700; color: var(--cyan); cursor: pointer;
+            user-select: none; padding: 2px 0;
         }
         .mgr-folder-title:hover { opacity: 0.85; }
         
         .mgr-folder-content {
-            display: flex;
-            flex-direction: column;
-            gap: 6px;
-            border-top: 1px dashed var(--card-border);
-            padding-top: 6px;
+            display: flex; flex-direction: column; gap: 6px; border-top: 1px dashed var(--card-border); padding-top: 6px;
         }
         .mgr-folder-content.collapsed { display: none; }
 
-        /* 统一规格卡片：全白底，高度严格统一28px，分类在上方，按键左删右存 */
         .mgr-item-card {
-            display: flex;
-            flex-direction: column;
-            gap: 6px;
-            padding: 8px;
-            background: #ffffff !important;
-            border: 1px solid var(--card-border);
-            border-radius: 6px;
+            display: flex; flex-direction: column; gap: 6px; padding: 8px;
+            background: #ffffff !important; border: 1px solid var(--card-border); border-radius: 6px;
         }
         body.dark-mode .mgr-item-card { background: var(--card-bg) !important; }
-
         .mgr-item-card:hover { border-color: var(--cyan); }
 
         .mgr-field-row {
-            display: flex;
-            align-items: center;
-            gap: 6px;
-            width: 100%;
-            height: var(--btn-height) !important;
+            display: flex; align-items: center; gap: 6px; width: 100%;
+            height: var(--btn-height) !important; min-height: var(--btn-height) !important; max-height: var(--btn-height) !important;
+            box-sizing: border-box;
         }
-        .mgr-name-input {
-            flex: 1;
-            min-width: 0;
-            height: var(--btn-height) !important;
-            font-weight: 700;
-            color: var(--cyan);
-            text-align: left !important;
-            padding: 0 8px !important;
-        }
+        .mgr-name-input { flex: 1; min-width: 0; height: var(--btn-height) !important; font-weight: 700; color: var(--cyan); text-align: left !important; padding: 0 8px !important; }
 
-        /* 顶部添加规格录入块：全白底，结构与下方卡片完全一致 */
         .mgr-add-block {
-            background: #ffffff !important;
-            border: 1px solid var(--card-border);
-            border-radius: 8px;
-            padding: 8px 10px;
-            display: flex;
-            flex-direction: column;
-            gap: 6px;
+            background: #ffffff !important; border: 1px solid var(--card-border); border-radius: 8px;
+            padding: 8px 10px; display: flex; flex-direction: column; gap: 6px; flex-shrink: 0;
         }
         body.dark-mode .mgr-add-block { background: var(--card-bg) !important; }
 
         .mgr-add-header {
-            font-weight: 700;
-            font-size: 0.75rem;
-            color: var(--cyan);
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            height: 24px;
+            font-weight: 700; font-size: 0.75rem; color: var(--cyan);
+            display: flex; justify-content: space-between; align-items: center; height: 24px;
         }
 
         @media (max-width: 860px) {
@@ -313,8 +319,8 @@
             <div class="hud-title"><h1>📦 打包模拟室</h1></div>
             <div class="header-actions">
                 <button class="icon-btn" title="日/夜模式" onclick="toggleTheme()">☀️</button>
-                <button class="icon-btn" title="系统设置与调色盘" onclick="openModal('settings-modal')">🎨</button>
-                <button class="icon-btn" title="资源库管理" onclick="openManagerModal()">📂</button>
+                <button class="icon-btn" title="调色盘" onclick="openModal('settings-modal')">🎨</button>
+                <button class="icon-btn" title="资源管理" onclick="openManagerModal()">📂</button>
                 <div class="unit-toggle" id="unit-group">
                     <button class="unit-btn active" id="btn-cm" onclick="setSysUnit('cm')">cm</button>
                     <button class="unit-btn" id="btn-mm" onclick="setSysUnit('mm')">mm</button>
@@ -373,7 +379,7 @@
 
                 <div id="multi-item-container" style="display:none; flex-direction:column; gap:6px;">
                     <div class="tool-row">
-                        <button class="sci-btn-mini sci-btn-primary" style="flex:1;" onclick="solveOptimalMultiPacking(true)">⚡ 自动计算三维最优解</button>
+                        <button class="sci-btn-mini sci-btn-primary" style="flex:1;" onclick="solveOptimalMultiPacking(true)">⚡ 自动调整</button>
                         <button class="sci-btn-mini" onclick="addMultiItemRow()">➕ 加物品</button>
                     </div>
                     <div id="multi-items-list" style="display:flex; flex-direction:column; gap:5px; max-height: 220px; overflow-y:auto; padding-right:2px;"></div>
@@ -406,37 +412,43 @@
                     <span class="tool-title">纸箱形态:</span>
                     <div class="segmented-control" id="flap-group">
                         <button class="seg-btn active" id="flap-open" onclick="setFlapState('open')">敞开</button>
-                        <button class="seg-btn" id="flap-half" onclick="setFlapState('half')">半</button>
+                        <button class="seg-btn" id="flap-half" onclick="setFlapState('half')">半开</button>
                         <button class="seg-btn" id="flap-closed" onclick="toggleFlapClosed()">闭合</button>
                     </div>
                 </div>
             </div>
 
             <!-- 模块 3：空间评估与推荐 -->
-            <div id="status-card" class="status-box status-fit">
-                <div style="display:flex; justify-content: space-between; align-items: flex-start;">
-                    <div style="display:flex; flex-direction:column; gap:2px;">
-                        <span style="font-weight:700; font-size:0.82rem;" id="match-box-title">🎯 当前纸箱：05号标准箱</span>
-                        <span style="font-size:0.7rem; opacity:0.85;" id="match-box-dims">(29×17×19 cm)</span>
-                    </div>
-                    <div style="display:flex; flex-direction:column; align-items:flex-end; gap:2px; text-align:right;">
-                        <span style="font-weight:800; font-size:0.82rem;" id="status-main-badge">✅ 完美装入</span>
-                        <span style="font-size:0.7rem; font-weight:600;" id="status-fill-rate">(利用率 100%)</span>
+            <div id="status-card" class="sci-card match-eval-card fit-ok">
+                <div class="card-head">
+                    <span class="card-label" style="display:flex; align-items:center; gap:6px;">
+                        🎯 匹配模拟
+                        <span id="match-box-title" style="font-size:0.75rem; color:var(--text-muted); font-weight:600;">05号标准箱</span>
+                    </span>
+                    <div style="display:flex; align-items:center; gap:4px;">
+                        <span id="status-fill-rate" class="badge-capsule bg-fit">100%</span>
+                        <span id="status-main-badge" class="badge-capsule bg-fit">✅ 完美装入</span>
                     </div>
                 </div>
 
-                <div id="status-sub" style="font-size:0.7rem; font-weight:600; padding:4px 6px; background:rgba(0,0,0,0.05); border-radius:4px;">
-                    余量: 长+6.5cm 宽+0.5cm 高+3.0cm
+                <div class="match-info-strip">
+                    <div style="display:flex; justify-content:space-between; align-items:center; font-size:0.7rem;">
+                        <span style="color:var(--text-muted);">纸箱规格:</span>
+                        <span id="match-box-dims" style="font-weight:700; color:var(--text-main);">(29×17×19 cm)</span>
+                    </div>
+                    <div id="status-sub" style="font-size:0.7rem; font-weight:600; color:var(--text-main);">
+                        余量: 长+6.5cm 宽+0.5cm 高+3.0cm
+                    </div>
                 </div>
                 
                 <div class="tool-row" style="margin-top:2px;">
-                    <span class="tool-title" style="color:inherit; width:52px;">附加缓冲:</span>
+                    <span class="tool-title" style="width:52px;">附加缓冲:</span>
                     <div style="display:flex; gap:6px; flex:1;">
                         <div class="input-with-label"><input type="number" id="in-custom-pad" class="sci-input" placeholder="0" oninput="onCustomPadInput(this.value)"><span class="suffix-text">膜 <b class="u-lab">cm</b></span></div>
                         <div class="input-with-label"><input type="number" id="in-custom-gap" class="sci-input" placeholder="0" oninput="onCustomGapInput(this.value)"><span class="suffix-text">缝隙 <b class="u-lab">cm</b></span></div>
                     </div>
                 </div>
-                <button class="sci-btn-mini sci-btn-primary" style="width:100%; height:32px; margin-top:2px;" onclick="autoFitBestBox()">⚡ 一键匹配最优纸箱</button>
+                <button class="sci-btn-mini sci-btn-primary" style="width:100%; height:30px; margin-top:2px;" onclick="autoFitBestBox()">⚡ 一键匹配最佳纸箱</button>
             </div>
 
         </div>
@@ -482,14 +494,17 @@
     <div id="save-item-modal" class="modal-mask" onclick="if(event.target===this)closeModal('save-item-modal')">
         <div class="modal-card" style="max-width:380px;">
             <div class="modal-head"><span>保存物品到库</span><span style="cursor:pointer;" onclick="closeModal('save-item-modal')">✕</span></div>
-            <div class="input-cell">
-                <span>分类夹</span>
+            <div class="input-cell" style="display:flex; flex-direction:column; gap:3px;">
+                <span class="field-label">分类夹</span>
                 <div class="input-with-label" style="height:28px;">
                     <select class="sci-select" id="save-item-folder-select" onchange="onSaveFolderSelectChange('item', this.value)"></select>
                     <span class="suffix-text">分类</span>
                 </div>
             </div>
-            <div class="input-cell"><span>物品名称</span><input type="text" class="sci-input" id="custom-item-name" placeholder="将自动带上 】命名，如：单盒"></div>
+            <div class="input-cell" style="display:flex; flex-direction:column; gap:3px;">
+                <span class="field-label">物品名称</span>
+                <input type="text" class="sci-input" id="custom-item-name" placeholder="带上命名，如：单盒">
+            </div>
             <div class="btn-group" style="margin-top:6px;">
                 <button class="sci-btn-mini sci-btn-primary" style="flex:1;" onclick="confirmSaveCustomItem()">保存到物品库</button>
             </div>
@@ -499,40 +514,42 @@
     <div id="save-box-modal" class="modal-mask" onclick="if(event.target===this)closeModal('save-box-modal')">
         <div class="modal-card" style="max-width:380px;">
             <div class="modal-head"><span>保存纸箱到库</span><span style="cursor:pointer;" onclick="closeModal('save-box-modal')">✕</span></div>
-            <div class="input-cell">
-                <span>分类夹</span>
+            <div class="input-cell" style="display:flex; flex-direction:column; gap:3px;">
+                <span class="field-label">分类夹</span>
                 <div class="input-with-label" style="height:28px;">
                     <select class="sci-select" id="save-box-folder-select" onchange="onSaveFolderSelectChange('box', this.value)"></select>
                     <span class="suffix-text">分类</span>
                 </div>
             </div>
-            <div class="input-cell"><span>箱型名称</span><input type="text" class="sci-input" id="custom-box-name" placeholder="将自动带上 】命名，如：端盒箱"></div>
+            <div class="input-cell" style="display:flex; flex-direction:column; gap:3px;">
+                <span class="field-label">箱型名称</span>
+                <input type="text" class="sci-input" id="custom-box-name" placeholder="带上命名，如：端盒箱">
+            </div>
             <div class="btn-group" style="margin-top:6px;">
                 <button class="sci-btn-mini sci-btn-primary" style="flex:1;" onclick="confirmSaveCustomBox()">保存到纸箱库</button>
             </div>
         </div>
     </div>
 
-    <!-- 统一资源库管理：分类在上方，卡片高度严格一致28px，删除在左/保存在右，删除二次确认，分类原生下拉可选可新建 -->
+    <!-- 资源管理弹窗 -->
     <div id="manager-modal" class="modal-mask" onclick="if(event.target===this)closeModal('manager-modal')">
         <div class="modal-card">
             <div class="modal-head">
-                <span style="display:flex; align-items:center; gap:6px;">📂 资源库管理 (分类与规格配置)</span>
+                <span>📂 资源管理</span>
                 <span style="cursor:pointer;" onclick="closeModal('manager-modal')">✕</span>
             </div>
             
-            <div class="segmented-control" style="min-height:30px;">
-                <button class="seg-btn active" id="mgr-tab-item" onclick="switchMgrTab('item')">📦 物品库 (分类管理)</button>
-                <button class="seg-btn" id="mgr-tab-box" onclick="switchMgrTab('box')">📦 纸箱库 (分类管理)</button>
+            <div class="segmented-control" style="min-height:28px; max-height:28px;">
+                <button class="seg-btn active" id="mgr-tab-item" onclick="onMgrTabClick('item')">📦 物品</button>
+                <button class="seg-btn" id="mgr-tab-box" onclick="onMgrTabClick('box')">📦 纸箱</button>
             </div>
             
             <!-- 物品库管理面板 -->
-            <div id="mgr-content-item" style="display:flex; flex-direction:column; gap:8px;">
-                <!-- 顶部新增录入块：UI结构与下方卡片完全相同，分类在上方，全白底，强制28px高度 -->
+            <div id="mgr-content-item">
                 <div class="mgr-add-block">
                     <div class="mgr-add-header">
                         <span>➕ 直接在库中新增物品规格</span>
-                        <button class="sci-btn-mini danger" style="height:22px;" onclick="resetDefaultItems()">恢复出厂默认物品</button>
+                        <button class="sci-btn-mini danger" style="height:22px; min-height:22px; max-height:22px;" onclick="resetDefaultItems()">恢复出厂默认物品</button>
                     </div>
                     <div class="mgr-field-row">
                         <div class="input-with-label">
@@ -541,8 +558,8 @@
                         </div>
                     </div>
                     <div class="mgr-field-row">
-                        <input type="text" id="mgr-add-item-name" class="sci-input mgr-name-input" placeholder="物品名称 (例如：手办单盒】)">
-                        <button class="sci-btn-mini sci-btn-primary" style="padding:0 14px;" onclick="mgrSubmitNewItem()">添加规格</button>
+                        <input type="text" id="mgr-add-item-name" class="sci-input mgr-name-input" placeholder="物品名称 (例如：手办单盒)">
+                        <button class="sci-btn-mini sci-btn-primary" style="height:28px !important; min-height:28px !important; max-height:28px !important; padding:0 14px;" onclick="mgrSubmitNewItem()">添加规格</button>
                     </div>
                     <div class="grid-3col">
                         <div class="input-with-label"><input type="number" id="mgr-add-item-l" class="sci-input" placeholder="长"><span class="suffix-text">长 <b class="u-lab">cm</b></span></div>
@@ -551,16 +568,15 @@
                     </div>
                 </div>
 
-                <div id="mgr-items-folder-container" style="display:flex; flex-direction:column; gap:8px; max-height:50vh; overflow-y:auto;"></div>
+                <div id="mgr-items-folder-container"></div>
             </div>
 
             <!-- 纸箱库管理面板 -->
-            <div id="mgr-content-box" style="display:none; flex-direction:column; gap:8px;">
-                <!-- 顶部新增录入块：UI结构与下方卡片完全相同，分类在上方，全白底，强制28px高度 -->
+            <div id="mgr-content-box" style="display:none;">
                 <div class="mgr-add-block">
                     <div class="mgr-add-header">
                         <span>➕ 直接在库中新增纸箱规格</span>
-                        <button class="sci-btn-mini danger" style="height:22px;" onclick="resetDefaultBoxes()">恢复出厂默认纸箱</button>
+                        <button class="sci-btn-mini danger" style="height:22px; min-height:22px; max-height:22px;" onclick="resetDefaultBoxes()">恢复出厂默认纸箱</button>
                     </div>
                     <div class="mgr-field-row">
                         <div class="input-with-label">
@@ -569,8 +585,8 @@
                         </div>
                     </div>
                     <div class="mgr-field-row">
-                        <input type="text" id="mgr-add-box-name" class="sci-input mgr-name-input" placeholder="纸箱名称 (例如：定制箱】)">
-                        <button class="sci-btn-mini sci-btn-primary" style="padding:0 14px;" onclick="mgrSubmitNewBox()">添加规格</button>
+                        <input type="text" id="mgr-add-box-name" class="sci-input mgr-name-input" placeholder="纸箱名称 (例如：定制箱)">
+                        <button class="sci-btn-mini sci-btn-primary" style="height:28px !important; min-height:28px !important; max-height:28px !important; padding:0 14px;" onclick="mgrSubmitNewBox()">添加规格</button>
                     </div>
                     <div class="grid-3col">
                         <div class="input-with-label"><input type="number" id="mgr-add-box-l" class="sci-input" placeholder="长"><span class="suffix-text">长 <b class="u-lab">cm</b></span></div>
@@ -579,7 +595,7 @@
                     </div>
                 </div>
 
-                <div id="mgr-boxes-folder-container" style="display:flex; flex-direction:column; gap:8px; max-height:50vh; overflow-y:auto;"></div>
+                <div id="mgr-boxes-folder-container"></div>
             </div>
         </div>
     </div>
@@ -594,7 +610,66 @@
         </div>
     </div>
 
+    <!-- 内置通用交互弹窗 -->
+    <div id="sys-prompt-modal" class="modal-mask">
+        <div class="modal-card" style="max-width:350px;">
+            <div class="modal-head"><span id="sys-prompt-title">提示</span></div>
+            <div id="sys-prompt-msg" style="font-size:0.8rem; color:var(--text-main); line-height:1.4;"></div>
+            <input type="text" id="sys-prompt-input" class="sci-input" style="display:none; width:100%; margin-top:4px;">
+            <div class="btn-group" style="margin-top:8px; justify-content:flex-end;">
+                <button class="sci-btn-mini" id="sys-prompt-cancel" style="display:none;">取消</button>
+                <button class="sci-btn-mini sci-btn-primary" id="sys-prompt-confirm">确定</button>
+            </div>
+        </div>
+    </div>
+
     <script>
+        function sysAlert(msg, title="提示") {
+            return new Promise(resolve => {
+                const m = document.getElementById('sys-prompt-modal');
+                document.getElementById('sys-prompt-title').textContent = title;
+                document.getElementById('sys-prompt-msg').textContent = msg;
+                document.getElementById('sys-prompt-input').style.display = 'none';
+                document.getElementById('sys-prompt-cancel').style.display = 'none';
+                const cfm = document.getElementById('sys-prompt-confirm');
+                cfm.onclick = () => { m.style.display = 'none'; resolve(); };
+                m.style.display = 'flex';
+            });
+        }
+
+        function sysConfirm(msg, title="确认操作") {
+            return new Promise(resolve => {
+                const m = document.getElementById('sys-prompt-modal');
+                document.getElementById('sys-prompt-title').textContent = title;
+                document.getElementById('sys-prompt-msg').textContent = msg;
+                document.getElementById('sys-prompt-input').style.display = 'none';
+                const cancelBtn = document.getElementById('sys-prompt-cancel');
+                cancelBtn.style.display = 'inline-flex';
+                cancelBtn.onclick = () => { m.style.display = 'none'; resolve(false); };
+                const cfm = document.getElementById('sys-prompt-confirm');
+                cfm.onclick = () => { m.style.display = 'none'; resolve(true); };
+                m.style.display = 'flex';
+            });
+        }
+
+        function sysPrompt(msg, defVal="", title="输入内容") {
+            return new Promise(resolve => {
+                const m = document.getElementById('sys-prompt-modal');
+                document.getElementById('sys-prompt-title').textContent = title;
+                document.getElementById('sys-prompt-msg').textContent = msg;
+                const inp = document.getElementById('sys-prompt-input');
+                inp.style.display = 'block';
+                inp.value = defVal;
+                const cancelBtn = document.getElementById('sys-prompt-cancel');
+                cancelBtn.style.display = 'inline-flex';
+                cancelBtn.onclick = () => { m.style.display = 'none'; resolve(null); };
+                const cfm = document.getElementById('sys-prompt-confirm');
+                cfm.onclick = () => { m.style.display = 'none'; resolve(inp.value); };
+                m.style.display = 'flex';
+                setTimeout(() => inp.focus(), 50);
+            });
+        }
+
         const INITIAL_BOX_PRESETS = {
             "p01": { name: "01号标准箱", folder: "邮政标准纸箱", dims: [530, 290, 370] },
             "p02": { name: "02号标准箱", folder: "邮政标准纸箱", dims: [530, 230, 290] },
@@ -686,12 +761,34 @@
         }
         function closeModal(id) { document.getElementById(id).style.display = 'none'; }
         
+        let activeMgrTab = 'item';
+        function onMgrTabClick(tab) {
+            if (activeMgrTab === tab) {
+                toggleAllFoldersCollapse(tab);
+            } else {
+                activeMgrTab = tab;
+                switchMgrTab(tab);
+            }
+        }
+
         function switchMgrTab(tab) {
+            activeMgrTab = tab;
             document.getElementById('mgr-tab-item').classList.toggle('active', tab === 'item');
             document.getElementById('mgr-tab-box').classList.toggle('active', tab === 'box');
             document.getElementById('mgr-content-item').style.display = tab === 'item' ? 'flex' : 'none';
             document.getElementById('mgr-content-box').style.display = tab === 'box' ? 'flex' : 'none';
         }
+
+        function toggleAllFoldersCollapse(type) {
+            const folders = getFolders(type);
+            const hasOpen = folders.some(f => !folderCollapseState[type][f]);
+            folders.forEach(f => {
+                folderCollapseState[type][f] = hasOpen;
+            });
+            if (type === 'item') renderManagerItemsList();
+            else renderManagerBoxesList();
+        }
+
         function openManagerModal() {
             openModal('manager-modal');
             renderManagerItemsList();
@@ -720,7 +817,6 @@
             return Array.from(set);
         }
 
-        // ================= 下拉菜单选中状态的特殊高亮指示 =================
         function updatePresetSelectHighlight() {
             const itemSel = document.getElementById('item-preset-select');
             if (itemSel) {
@@ -812,9 +908,9 @@
             }
         }
 
-        function onSaveFolderSelectChange(type, val) {
+        async function onSaveFolderSelectChange(type, val) {
             if (val === '__NEW__') {
-                const name = prompt('请输入新分类名称:');
+                const name = await sysPrompt('请输入新分类名称:');
                 const sel = document.getElementById(type === 'item' ? 'save-item-folder-select' : 'save-box-folder-select');
                 if (name && name.trim()) {
                     const opt = document.createElement('option');
@@ -828,9 +924,9 @@
             }
         }
 
-        function onMgrNewFolderSelect(type, val) {
+        async function onMgrNewFolderSelect(type, val) {
             if (val === '__NEW__') {
-                const name = prompt('请输入新分类名称:');
+                const name = await sysPrompt('请输入新分类名称:');
                 const sel = document.getElementById(type === 'item' ? 'mgr-add-item-folder-select' : 'mgr-add-box-folder-select');
                 if (name && name.trim()) {
                     const opt = document.createElement('option');
@@ -844,7 +940,6 @@
             }
         }
 
-        // ================= 资源库管理：分类置于上方、白底、高度严格一致28px、删除在左/保存在右/删除二次确认 =================
         function renderManagerItemsList() {
             const container = document.getElementById('mgr-items-folder-container');
             container.innerHTML = '';
@@ -867,7 +962,6 @@
 
                     return `
                     <div class="mgr-item-card">
-                        <!-- 第一行：分类在上方，高度严格28px -->
                         <div class="mgr-field-row">
                             <div class="input-with-label">
                                 <select class="sci-select" id="mgr-edit-item-folder-${it.key}" onchange="onItemRowFolderChange('${it.key}', this.value)">
@@ -876,7 +970,6 @@
                                 <span class="suffix-text">分类</span>
                             </div>
                         </div>
-                        <!-- 第二行：名称在中间，删除在左，保存在右，高度严格28px -->
                         <div class="mgr-field-row">
                             <input type="text" class="sci-input mgr-name-input" id="mgr-edit-item-name-${it.key}" value="${it.name}" placeholder="物品名称">
                             <div class="btn-group">
@@ -885,7 +978,6 @@
                                 <button class="sci-btn-mini sci-btn-primary" onclick="mgrSaveItemEdit('${it.key}')">保存</button>
                             </div>
                         </div>
-                        <!-- 第三行：长宽高尺寸，高度严格28px -->
                         <div class="grid-3col">
                             <div class="input-with-label"><input type="number" class="sci-input" id="mgr-edit-item-l-${it.key}" value="${toDisplay(it.dims[0])}"><span class="suffix-text">长 <b class="u-lab">${curUnit}</b></span></div>
                             <div class="input-with-label"><input type="number" class="sci-input" id="mgr-edit-item-w-${it.key}" value="${toDisplay(it.dims[1])}"><span class="suffix-text">宽 <b class="u-lab">${curUnit}</b></span></div>
@@ -900,7 +992,7 @@
                             <span>${isCollapsed ? '▶' : '▼'} 📁 <b>${folderName}</b></span>
                             <span style="font-size:0.68rem; color:var(--text-muted); font-weight:normal;">(${items.length} 规格)</span>
                         </div>
-                        <button class="sci-btn-mini" style="height:22px; font-size:0.65rem;" onclick="renameFolder('item', '${folderName}')">✏️ 改分类名</button>
+                        <button class="sci-btn-mini" style="height:22px; min-height:22px; max-height:22px; font-size:0.65rem;" onclick="renameFolder('item', '${folderName}')">✏️ 改分类名</button>
                     </div>
                     <div class="mgr-folder-content ${isCollapsed ? 'collapsed' : ''}">${rowsHTML}</div>
                 `;
@@ -908,9 +1000,9 @@
             }
         }
 
-        function onItemRowFolderChange(k, val) {
+        async function onItemRowFolderChange(k, val) {
             if (val === '__NEW__') {
-                const name = prompt('请输入新分类名称:');
+                const name = await sysPrompt('请输入新分类名称:');
                 if (name && name.trim()) {
                     ITEM_PRESETS[k].folder = name.trim();
                     saveItemsToStorage();
@@ -949,7 +1041,6 @@
 
                     return `
                     <div class="mgr-item-card">
-                        <!-- 第一行：分类在上方，高度严格28px -->
                         <div class="mgr-field-row">
                             <div class="input-with-label">
                                 <select class="sci-select" id="mgr-edit-box-folder-${b.key}" onchange="onBoxRowFolderChange('${b.key}', this.value)">
@@ -958,7 +1049,6 @@
                                 <span class="suffix-text">分类</span>
                             </div>
                         </div>
-                        <!-- 第二行：名称在中间，删除在左，保存在右，高度严格28px -->
                         <div class="mgr-field-row">
                             <input type="text" class="sci-input mgr-name-input" id="mgr-edit-box-name-${b.key}" value="${b.name}" placeholder="纸箱名称">
                             <div class="btn-group">
@@ -967,7 +1057,6 @@
                                 <button class="sci-btn-mini sci-btn-primary" onclick="mgrSaveBoxEdit('${b.key}')">保存</button>
                             </div>
                         </div>
-                        <!-- 第三行：长宽高尺寸，高度严格28px -->
                         <div class="grid-3col">
                             <div class="input-with-label"><input type="number" class="sci-input" id="mgr-edit-box-l-${b.key}" value="${toDisplay(b.dims[0])}"><span class="suffix-text">长 <b class="u-lab">${curUnit}</b></span></div>
                             <div class="input-with-label"><input type="number" class="sci-input" id="mgr-edit-box-w-${b.key}" value="${toDisplay(b.dims[1])}"><span class="suffix-text">宽 <b class="u-lab">${curUnit}</b></span></div>
@@ -982,7 +1071,7 @@
                             <span>${isCollapsed ? '▶' : '▼'} 📁 <b>${folderName}</b></span>
                             <span style="font-size:0.68rem; color:var(--text-muted); font-weight:normal;">(${items.length} 规格)</span>
                         </div>
-                        <button class="sci-btn-mini" style="height:22px; font-size:0.65rem;" onclick="renameFolder('box', '${folderName}')">✏️ 改分类名</button>
+                        <button class="sci-btn-mini" style="height:22px; min-height:22px; max-height:22px; font-size:0.65rem;" onclick="renameFolder('box', '${folderName}')">✏️ 改分类名</button>
                     </div>
                     <div class="mgr-folder-content ${isCollapsed ? 'collapsed' : ''}">${rowsHTML}</div>
                 `;
@@ -990,9 +1079,9 @@
             }
         }
 
-        function onBoxRowFolderChange(k, val) {
+        async function onBoxRowFolderChange(k, val) {
             if (val === '__NEW__') {
-                const name = prompt('请输入新分类名称:');
+                const name = await sysPrompt('请输入新分类名称:');
                 if (name && name.trim()) {
                     BOX_PRESETS[k].folder = name.trim();
                     saveBoxesToStorage();
@@ -1009,8 +1098,8 @@
             }
         }
 
-        function renameFolder(type, oldName) {
-            const newName = prompt(`请输入分类夹【${oldName}】的新名称:`, oldName);
+        async function renameFolder(type, oldName) {
+            const newName = await sysPrompt(`请输入分类夹【${oldName}】的新名称:`, oldName);
             if (!newName || newName.trim() === '' || newName.trim() === oldName) return;
             const targetName = newName.trim();
 
@@ -1037,7 +1126,6 @@
         function mgrSubmitNewItem() {
             let name = document.getElementById('mgr-add-item-name').value.trim();
             if (!name) name = `物品_${Date.now().toString().slice(-4)}`;
-            if (!name.includes('】')) name += '】';
             
             let folder = document.getElementById('mgr-add-item-folder-select').value;
             if (folder === '__NEW__' || !folder) folder = '默认物品';
@@ -1083,21 +1171,28 @@
             closeModal('manager-modal');
         }
 
-        // 删除增加二次确认
-        function mgrDeleteItem(k) {
+        async function mgrDeleteItem(k) {
             const it = ITEM_PRESETS[k];
             const name = it ? it.name : '该规格';
-            if (!confirm(`确定要删除物品规格【${name}】吗？此操作不可撤销！`)) return;
-            if (Object.keys(ITEM_PRESETS).length <= 1) { alert('物品库至少需保留一个预设！'); return; }
+            const confirmed = await sysConfirm(`确定要删除物品规格【${name}】吗？此操作不可撤销！`);
+            if (!confirmed) return;
+            if (Object.keys(ITEM_PRESETS).length <= 1) { await sysAlert('物品库至少需保留一个预设！'); return; }
             delete ITEM_PRESETS[k];
             saveItemsToStorage();
             refreshPresetsDropdowns();
             renderManagerItemsList();
         }
 
-        function resetDefaultItems() {
-            if (confirm('确认将物品库完全重置为出厂初始预设？')) {
-                ITEM_PRESETS = JSON.parse(JSON.stringify(INITIAL_ITEM_PRESETS));
+        async function resetDefaultItems() {
+            const confirmed = await sysConfirm('确认恢复出厂默认物品？\n注：系统默认规格将复原，您自行添加的物品规格将安全保留！');
+            if (confirmed) {
+                const userCustomItems = {};
+                for (const [k, v] of Object.entries(ITEM_PRESETS)) {
+                    if (!INITIAL_ITEM_PRESETS[k]) {
+                        userCustomItems[k] = v;
+                    }
+                }
+                ITEM_PRESETS = Object.assign(JSON.parse(JSON.stringify(INITIAL_ITEM_PRESETS)), userCustomItems);
                 saveItemsToStorage();
                 refreshPresetsDropdowns();
                 renderManagerItemsList();
@@ -1108,7 +1203,6 @@
         function mgrSubmitNewBox() {
             let name = document.getElementById('mgr-add-box-name').value.trim();
             if (!name) name = `箱型_${Date.now().toString().slice(-4)}`;
-            if (!name.includes('】')) name += '】';
             
             let folder = document.getElementById('mgr-add-box-folder-select').value;
             if (folder === '__NEW__' || !folder) folder = '自定义箱';
@@ -1153,21 +1247,28 @@
             closeModal('manager-modal');
         }
 
-        // 删除增加二次确认
-        function mgrDeleteBox(k) {
+        async function mgrDeleteBox(k) {
             const b = BOX_PRESETS[k];
             const name = b ? b.name : '该规格';
-            if (!confirm(`确定要删除纸箱规格【${name}】吗？此操作不可撤销！`)) return;
-            if (Object.keys(BOX_PRESETS).length <= 1) { alert('纸箱库至少需保留一个预设！'); return; }
+            const confirmed = await sysConfirm(`确定要删除纸箱规格【${name}】吗？此操作不可撤销！`);
+            if (!confirmed) return;
+            if (Object.keys(BOX_PRESETS).length <= 1) { await sysAlert('纸箱库至少需保留一个预设！'); return; }
             delete BOX_PRESETS[k];
             saveBoxesToStorage();
             refreshPresetsDropdowns();
             renderManagerBoxesList();
         }
 
-        function resetDefaultBoxes() {
-            if (confirm('确认将纸箱库完全重置为出厂初始预设？')) {
-                BOX_PRESETS = JSON.parse(JSON.stringify(INITIAL_BOX_PRESETS));
+        async function resetDefaultBoxes() {
+            const confirmed = await sysConfirm('确认恢复出厂默认纸箱？\n注：系统默认纸箱规格将复原，您自行添加的纸箱规格将安全保留！');
+            if (confirmed) {
+                const userCustomBoxes = {};
+                for (const [k, v] of Object.entries(BOX_PRESETS)) {
+                    if (!INITIAL_BOX_PRESETS[k]) {
+                        userCustomBoxes[k] = v;
+                    }
+                }
+                BOX_PRESETS = Object.assign(JSON.parse(JSON.stringify(INITIAL_BOX_PRESETS)), userCustomBoxes);
                 saveBoxesToStorage();
                 refreshPresetsDropdowns();
                 renderManagerBoxesList();
@@ -1179,7 +1280,6 @@
         function confirmSaveCustomItem() {
             let name = document.getElementById('custom-item-name').value.trim();
             if (!name) name = `物品_${Date.now().toString().slice(-4)}`;
-            if (!name.includes('】')) name += '】';
             const folder = document.getElementById('save-item-folder-select').value || '自定义物品';
             const key = 'it_' + Date.now();
             ITEM_PRESETS[key] = { name: name, folder: folder, dims: [itemSize.l, itemSize.w, itemSize.h] };
@@ -1195,7 +1295,6 @@
             const folder = document.getElementById('save-box-folder-select').value || '自定义箱';
             let name = document.getElementById('custom-box-name').value.trim();
             if (!name) name = `箱型_${Date.now().toString().slice(-4)}`;
-            if (!name.includes('】')) name += '】';
             const key = 'bx_' + Date.now();
             BOX_PRESETS[key] = { name: name, folder: folder, dims: [boxSize.l, boxSize.w, boxSize.h] };
             saveBoxesToStorage();
@@ -1398,8 +1497,8 @@
             solveOptimalMultiPacking(false);
         }
 
-        function removeMultiItemRow(idx) {
-            if (multiItemList.length <= 1) { alert('至少保留一件物品！'); return; }
+        async function removeMultiItemRow(idx) {
+            if (multiItemList.length <= 1) { await sysAlert('至少保留一件物品！'); return; }
             multiItemList.splice(idx, 1);
             renderMultiItemsUI();
             solveOptimalMultiPacking(false);
@@ -1554,7 +1653,7 @@
             const boxVol = (boxSize.l * boxSize.w * boxSize.h) / 1000000;
             const fillRate = Math.min(100, Math.round((rawVol / boxVol) * 100));
 
-            document.getElementById('match-box-title').textContent = `🎯 当前纸箱：${currentBoxName}`;
+            document.getElementById('match-box-title').textContent = currentBoxName;
             document.getElementById('match-box-dims').textContent = `(${toDisplay(boxSize.l)}×${toDisplay(boxSize.w)}×${toDisplay(boxSize.h)} ${curUnit})`;
 
             const mb = document.getElementById('status-main-badge');
@@ -1563,29 +1662,34 @@
             const sc = document.getElementById('status-card');
 
             if (fitsCurrent) {
-                sc.className = 'status-box status-fit';
+                sc.className = 'sci-card match-eval-card fit-ok';
+                mb.className = 'badge-capsule bg-fit';
                 mb.textContent = `✅ 完美装入`;
-                sFr.textContent = `(利用率 ${fillRate}%)`;
-                sFr.style.display = 'block';
-                ss.innerHTML = `余量: 长+${toDisplay(boxSize.l - reqL)}${curUnit} 宽+${toDisplay(boxSize.w - reqW)}${curUnit} 高+${toDisplay(boxSize.h - reqH)}${curUnit}`;
+                sFr.className = 'badge-capsule bg-fit';
+                sFr.textContent = `${fillRate}% 利用率`;
+                sFr.style.display = 'inline-flex';
+                ss.innerHTML = `余量: 长+${toDisplay(boxSize.l - reqL)}${curUnit} | 宽+${toDisplay(boxSize.w - reqW)}${curUnit} | 高+${toDisplay(boxSize.h - reqH)}${curUnit}`;
             } else if (fitsRotated) {
-                sc.className = 'status-box status-fit';
-                mb.textContent = `🔄 纸箱立起可装入`;
-                sFr.textContent = `(利用率 ${fillRate}%)`;
-                sFr.style.display = 'block';
-                ss.innerHTML = `纸箱旋转/立起即可完全容纳！建议点击下方一键匹配自动摆正纸箱。`;
+                sc.className = 'sci-card match-eval-card fit-warn';
+                mb.className = 'badge-capsule bg-warn';
+                mb.textContent = `🔄 旋转可装入`;
+                sFr.className = 'badge-capsule bg-warn';
+                sFr.textContent = `${fillRate}% 利用率`;
+                sFr.style.display = 'inline-flex';
+                ss.innerHTML = `提示：纸箱立起/旋转摆放即可装下，建议点击下方一键匹配自动对齐。`;
             } else {
-                sc.className = 'status-box status-over';
+                sc.className = 'sci-card match-eval-card fit-over';
+                mb.className = 'badge-capsule bg-over';
                 mb.textContent = '❌ 尺寸不足';
                 sFr.style.display = 'none';
                 const overL = Math.max(0, reqL - boxSize.l);
                 const overW = Math.max(0, reqW - boxSize.w);
                 const overH = Math.max(0, reqH - boxSize.h);
-                ss.innerHTML = `长超 ${toDisplay(overL)}${curUnit} / 宽超 ${toDisplay(overW)}${curUnit} / 高超 ${toDisplay(overH)}${curUnit}`;
+                ss.innerHTML = `超标: 长超 ${toDisplay(overL)}${curUnit} | 宽超 ${toDisplay(overW)}${curUnit} | 高超 ${toDisplay(overH)}${curUnit}`;
             }
         }
 
-        function autoFitBestBox() {
+        async function autoFitBestBox() {
             if (packingMode === 'multi') {
                 solveOptimalMultiPacking(true);
             }
@@ -1643,7 +1747,7 @@
                 updateInputDisplays();
                 rebuild3D();
             } else {
-                alert('当前箱库无合适纸箱，请调小预留缝隙或在资源库中新增自定义箱型！');
+                await sysAlert('当前箱库无合适纸箱，请调小预留缝隙或在资源库中新增自定义箱型！');
             }
         }
 
@@ -1683,7 +1787,6 @@
             window.addEventListener('resize', () => { camera.aspect = container.clientWidth / container.clientHeight; camera.updateProjectionMatrix(); renderer.setSize(container.clientWidth, container.clientHeight); });
         }
 
-        // 回正：仅把中心点(target)归位，相机视角与缩放保持不变
         function resetCameraView() {
             const newTarget = new THREE.Vector3(0, boxSize.h / 2, 0);
             const delta = new THREE.Vector3().subVectors(newTarget, controls.target);
